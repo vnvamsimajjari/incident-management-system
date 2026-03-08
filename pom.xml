@@ -6,7 +6,7 @@
 
 	<modelVersion>4.0.0</modelVersion>
 
-	<!-- ✅ STABLE SPRING BOOT VERSION -->
+	<!-- Spring Boot Parent -->
 	<parent>
 		<groupId>org.springframework.boot</groupId>
 		<artifactId>spring-boot-starter-parent</artifactId>
@@ -17,6 +17,7 @@
 	<groupId>com.vamsi</groupId>
 	<artifactId>incident-management</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
+
 	<name>incident-management</name>
 	<description>Enterprise Incident and SLA Automation Platform</description>
 
@@ -24,6 +25,7 @@
 		<java.version>21</java.version>
 	</properties>
 
+	<!-- ================= DEPENDENCIES ================= -->
 	<dependencies>
 
 		<!-- WEB -->
@@ -78,6 +80,12 @@
 			<scope>runtime</scope>
 		</dependency>
 
+		<!-- EMAIL (for SLA alerts) -->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-mail</artifactId>
+		</dependency>
+
 		<!-- LOMBOK -->
 		<dependency>
 			<groupId>org.projectlombok</groupId>
@@ -100,10 +108,11 @@
 
 	</dependencies>
 
+	<!-- ================= BUILD ================= -->
 	<build>
 		<plugins>
 
-			<!-- Lombok Processor -->
+			<!-- Lombok Annotation Processor -->
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-compiler-plugin</artifactId>

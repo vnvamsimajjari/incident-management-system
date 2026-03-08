@@ -1,7 +1,11 @@
 package com.vamsi.incident_management.scheduler;
 
 import com.vamsi.incident_management.entity.Incident;
+import com.vamsi.incident_management.entity.Priority;
+import com.vamsi.incident_management.entity.User;
 import com.vamsi.incident_management.repository.IncidentRepository;
+import com.vamsi.incident_management.repository.UserRepository;
+import com.vamsi.incident_management.service.EmailService;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -18,6 +22,8 @@ import java.util.List;
 public class SlaBreachScheduler {
 
     private final IncidentRepository incidentRepository;
+    private final UserRepository userRepository;
+    private final EmailService emailService;
 
     // Runs every 5 minutes
     @Scheduled(cron = "0 */5 * * * *")
@@ -27,7 +33,7 @@ public class SlaBreachScheduler {
 
         LocalDateTime now = LocalDateTime.now();
 
-        // Fetch only incidents that should already be breached
+        // Fetch incidents whose SLA is breached
         List<Incident> incidents =
                 incidentRepository.findIncidentsWithBreachedSla(now);
 
@@ -38,13 +44,67 @@ public class SlaBreachScheduler {
 
         for (Incident incident : incidents) {
 
+            // Mark incident as breached
             incident.setBreached(true);
 
+            // Escalate incident
+            escalateIncident(incident);
+
+            // Save updated incident
             incidentRepository.save(incident);
 
-            log.warn("SLA breached for incident {}", incident.getId());
+            // Send email notification
+            sendNotification(incident);
+
+            log.warn("SLA breached and processed for incident {}", incident.getId());
         }
 
         log.info("SLA breach check completed. {} incidents updated.", incidents.size());
+    }
+
+    private void escalateIncident(Incident incident) {
+
+        Priority priority = incident.getPriority();
+
+        switch (priority) {
+
+            case LOW:
+                incident.setPriority(Priority.MEDIUM);
+                log.info("Incident {} escalated from LOW → MEDIUM", incident.getId());
+                break;
+
+            case MEDIUM:
+                incident.setPriority(Priority.HIGH);
+                log.info("Incident {} escalated from MEDIUM → HIGH", incident.getId());
+                break;
+
+            case HIGH:
+                User admin = userRepository.findByUsername("admin")
+                        .orElseThrow(() -> new RuntimeException("Admin user not found"));
+
+                incident.setAssignedTo(admin);
+                log.info("Incident {} escalated to ADMIN", incident.getId());
+                break;
+        }
+    }
+
+    private void sendNotification(Incident incident) {
+
+        try {
+
+            if (incident.getAssignedTo() != null &&
+                    incident.getAssignedTo().getEmail() != null) {
+
+                String email = incident.getAssignedTo().getEmail();
+
+                emailService.sendSlaBreachEmail(
+                        email,
+                        incident.getId()
+                );
+            }
+
+        } catch (Exception e) {
+            log.error("Failed to send SLA notification for incident {}", incident.getId(), e);
+        }
     }
 }
