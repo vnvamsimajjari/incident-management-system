@@ -2,8 +2,12 @@ package com.vamsi.incident_management.controller;
 
 import com.vamsi.incident_management.dto.*;
 import com.vamsi.incident_management.entity.IncidentComment;
+import com.vamsi.incident_management.entity.IncidentEscalation;
+import com.vamsi.incident_management.entity.NotificationLog;
 import com.vamsi.incident_management.entity.Priority;
 import com.vamsi.incident_management.entity.Status;
+import com.vamsi.incident_management.repository.IncidentEscalationRepository;
+import com.vamsi.incident_management.repository.NotificationLogRepository;
 import com.vamsi.incident_management.service.IncidentService;
 
 import jakarta.validation.Valid;
@@ -25,6 +29,8 @@ import java.util.Map;
 public class IncidentController {
 
     private final IncidentService service;
+    private final IncidentEscalationRepository escalationRepository;
+    private final NotificationLogRepository notificationLogRepository;
 
     // ================= CREATE =================
     @PostMapping
@@ -112,7 +118,6 @@ public class IncidentController {
     @GetMapping("/breached")
     @PreAuthorize("hasAnyRole('ADMIN','ENGINEER')")
     public List<IncidentResponse> getBreachedIncidents() {
-
         return service.getBreachedIncidents();
     }
 
@@ -120,7 +125,6 @@ public class IncidentController {
     @GetMapping("/my-incidents")
     @PreAuthorize("hasAnyRole('ADMIN','ENGINEER')")
     public List<IncidentResponse> getMyIncidents() {
-
         return service.getMyIncidents();
     }
 
@@ -128,7 +132,6 @@ public class IncidentController {
     @GetMapping("/summary")
     @PreAuthorize("hasAnyRole('ADMIN','ENGINEER')")
     public DashboardSummaryResponse getDashboardSummary() {
-
         return service.getDashboardSummary();
     }
 
@@ -147,7 +150,23 @@ public class IncidentController {
     @GetMapping("/{id}/comments")
     @PreAuthorize("hasAnyRole('ADMIN','ENGINEER')")
     public List<IncidentComment> getComments(@PathVariable Long id) {
-
         return service.getComments(id);
+    }
+
+    // ================= ESCALATION HISTORY =================
+    @GetMapping("/{id}/escalations")
+    @PreAuthorize("hasAnyRole('ADMIN','ENGINEER')")
+    public List<IncidentEscalation> getEscalations(@PathVariable Long id) {
+
+        return escalationRepository
+                .findByIncidentIdOrderByEscalatedAtDesc(id);
+    }
+
+    // ================= NOTIFICATION LOGS =================
+    @GetMapping("/notifications")
+    @PreAuthorize("hasRole('ADMIN')")
+    public List<NotificationLog> getNotificationLogs() {
+
+        return notificationLogRepository.findAll();
     }
 }

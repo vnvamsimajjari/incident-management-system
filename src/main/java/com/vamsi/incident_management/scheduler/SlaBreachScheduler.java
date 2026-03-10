@@ -1,10 +1,7 @@
 package com.vamsi.incident_management.scheduler;
 
-import com.vamsi.incident_management.entity.Incident;
-import com.vamsi.incident_management.entity.Priority;
-import com.vamsi.incident_management.entity.User;
-import com.vamsi.incident_management.repository.IncidentRepository;
-import com.vamsi.incident_management.repository.UserRepository;
+import com.vamsi.incident_management.entity.*;
+import com.vamsi.incident_management.repository.*;
 import com.vamsi.incident_management.service.EmailService;
 
 import lombok.RequiredArgsConstructor;
@@ -24,6 +21,7 @@ public class SlaBreachScheduler {
     private final IncidentRepository incidentRepository;
     private final UserRepository userRepository;
     private final EmailService emailService;
+    private final IncidentEscalationRepository escalationRepository;
 
     // Runs every 5 minutes
     @Scheduled(cron = "0 */5 * * * *")
@@ -33,7 +31,6 @@ public class SlaBreachScheduler {
 
         LocalDateTime now = LocalDateTime.now();
 
-        // Fetch incidents whose SLA is breached
         List<Incident> incidents =
                 incidentRepository.findIncidentsWithBreachedSla(now);
 
@@ -44,16 +41,12 @@ public class SlaBreachScheduler {
 
         for (Incident incident : incidents) {
 
-            // Mark incident as breached
             incident.setBreached(true);
 
-            // Escalate incident
             escalateIncident(incident);
 
-            // Save updated incident
             incidentRepository.save(incident);
 
-            // Send email notification
             sendNotification(incident);
 
             log.warn("SLA breached and processed for incident {}", incident.getId());
@@ -64,17 +57,20 @@ public class SlaBreachScheduler {
 
     private void escalateIncident(Incident incident) {
 
-        Priority priority = incident.getPriority();
+        Priority oldPriority = incident.getPriority();
+        Priority newPriority = oldPriority;
 
-        switch (priority) {
+        switch (oldPriority) {
 
             case LOW:
-                incident.setPriority(Priority.MEDIUM);
+                newPriority = Priority.MEDIUM;
+                incident.setPriority(newPriority);
                 log.info("Incident {} escalated from LOW → MEDIUM", incident.getId());
                 break;
 
             case MEDIUM:
-                incident.setPriority(Priority.HIGH);
+                newPriority = Priority.HIGH;
+                incident.setPriority(newPriority);
                 log.info("Incident {} escalated from MEDIUM → HIGH", incident.getId());
                 break;
 
@@ -85,6 +81,19 @@ public class SlaBreachScheduler {
                 incident.setAssignedTo(admin);
                 log.info("Incident {} escalated to ADMIN", incident.getId());
                 break;
+        }
+
+        // Save escalation history
+        if (oldPriority != newPriority) {
+
+            IncidentEscalation escalation = IncidentEscalation.builder()
+                    .incidentId(incident.getId())
+                    .oldPriority(oldPriority)
+                    .newPriority(newPriority)
+                    .escalatedAt(LocalDateTime.now())
+                    .build();
+
+            escalationRepository.save(escalation);
         }
     }
 

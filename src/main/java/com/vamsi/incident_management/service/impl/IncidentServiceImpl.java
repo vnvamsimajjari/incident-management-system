@@ -2,15 +2,16 @@ package com.vamsi.incident_management.service.impl;
 
 import com.vamsi.incident_management.dto.*;
 import com.vamsi.incident_management.entity.*;
+import com.vamsi.incident_management.event.IncidentAssignedEvent;
+import com.vamsi.incident_management.event.IncidentCreatedEvent;
 import com.vamsi.incident_management.exception.ResourceNotFoundException;
-import com.vamsi.incident_management.repository.IncidentAuditRepository;
-import com.vamsi.incident_management.repository.IncidentRepository;
-import com.vamsi.incident_management.repository.UserRepository;
-import com.vamsi.incident_management.repository.IncidentCommentRepository;
+import com.vamsi.incident_management.repository.*;
 import com.vamsi.incident_management.service.IncidentService;
 import com.vamsi.incident_management.specification.IncidentSpecification;
 
 import lombok.RequiredArgsConstructor;
+
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -24,12 +25,14 @@ import java.util.List;
 @RequiredArgsConstructor
 public class IncidentServiceImpl implements IncidentService {
 
+
     private final IncidentRepository repository;
     private final IncidentAuditRepository auditRepository;
     private final UserRepository userRepository;
     private final IncidentCommentRepository incidentCommentRepository;
+    private final ApplicationEventPublisher publisher;
 
-    // ================= CREATE =================
+    // ================= CREATE INCIDENT =================
     @Override
     public IncidentResponse createIncident(IncidentRequest request) {
 
@@ -62,10 +65,14 @@ public class IncidentServiceImpl implements IncidentService {
                 .breached(false)
                 .build();
 
-        return mapToResponse(repository.save(incident));
+        Incident savedIncident = repository.save(incident);
+
+        publisher.publishEvent(new IncidentCreatedEvent(savedIncident));
+
+        return mapToResponse(savedIncident);
     }
 
-    // ================= GET =================
+    // ================= GET INCIDENT =================
     @Override
     public IncidentResponse getIncident(Long id) {
 
@@ -80,7 +87,7 @@ public class IncidentServiceImpl implements IncidentService {
         return mapToResponse(incident);
     }
 
-    // ================= FILTER =================
+    // ================= FILTER INCIDENTS =================
     @Override
     public Page<IncidentResponse> getAllIncidents(
             Status status,
@@ -105,7 +112,7 @@ public class IncidentServiceImpl implements IncidentService {
                 .map(this::mapToResponse);
     }
 
-    // ================= UPDATE =================
+    // ================= UPDATE INCIDENT =================
     @Override
     public IncidentResponse updateIncident(Long id, IncidentRequest request) {
 
@@ -148,6 +155,7 @@ public class IncidentServiceImpl implements IncidentService {
         validateStatusTransition(oldStatus, status);
 
         if (oldStatus != status) {
+
             IncidentAudit audit = IncidentAudit.builder()
                     .incidentId(id)
                     .oldStatus(oldStatus)
@@ -159,22 +167,88 @@ public class IncidentServiceImpl implements IncidentService {
         }
 
         incident.setStatus(status);
-
-        if (status == Status.RESOLVED) {
-            incident.setResolvedAt(LocalDateTime.now());
-
-            if (incident.getDueAt() != null &&
-                    LocalDateTime.now().isAfter(incident.getDueAt())) {
-                incident.setBreached(true);
-            }
-        }
-
         incident.setUpdatedAt(LocalDateTime.now());
 
         return mapToResponse(repository.save(incident));
     }
 
-    // ================= DELETE =================
+    // ================= RESOLVE INCIDENT =================
+    @Override
+    public IncidentResponse resolveIncident(Long id) {
+
+        Incident incident = getIncidentOrThrow(id);
+        enforceOwnershipForWrite(incident);
+
+        if (incident.getStatus() != Status.IN_PROGRESS) {
+            throw new IllegalStateException(
+                    "Only IN_PROGRESS incidents can be resolved");
+        }
+
+        incident.setStatus(Status.RESOLVED);
+        incident.setResolvedAt(LocalDateTime.now());
+        incident.setUpdatedAt(LocalDateTime.now());
+
+        if (incident.getDueAt() != null &&
+                LocalDateTime.now().isAfter(incident.getDueAt())) {
+            incident.setBreached(true);
+        }
+
+        Incident savedIncident = repository.save(incident);
+
+        IncidentAudit audit = IncidentAudit.builder()
+                .incidentId(savedIncident.getId())
+                .oldStatus(Status.IN_PROGRESS)
+                .newStatus(Status.RESOLVED)
+                .changedAt(LocalDateTime.now())
+                .build();
+
+        auditRepository.save(audit);
+
+        return mapToResponse(savedIncident);
+    }
+
+    // ================= CLOSE INCIDENT =================
+    @Override
+    public IncidentResponse closeIncident(Long id) {
+
+        Incident incident = getIncidentOrThrow(id);
+
+        if (!isAdmin()) {
+            throw new AccessDeniedException(
+                    "Only admin can close incidents");
+        }
+
+        if (incident.getStatus() != Status.RESOLVED) {
+            throw new IllegalStateException(
+                    "Only RESOLVED incidents can be closed");
+        }
+
+        incident.setStatus(Status.CLOSED);
+        incident.setUpdatedAt(LocalDateTime.now());
+
+        Incident savedIncident = repository.save(incident);
+
+        return mapToResponse(savedIncident);
+    }
+
+    // ================= INCIDENT AUDIT =================
+    @Override
+    public List<IncidentAuditResponse> getIncidentAudit(Long incidentId) {
+
+        getIncidentOrThrow(incidentId);
+
+        return auditRepository
+                .findByIncidentIdOrderByChangedAtAsc(incidentId)
+                .stream()
+                .map(audit -> IncidentAuditResponse.builder()
+                        .oldStatus(audit.getOldStatus())
+                        .newStatus(audit.getNewStatus())
+                        .changedAt(audit.getChangedAt())
+                        .build())
+                .toList();
+    }
+
+    // ================= DELETE INCIDENT =================
     @Override
     public void deleteIncident(Long id) {
 
@@ -188,7 +262,7 @@ public class IncidentServiceImpl implements IncidentService {
         repository.save(incident);
     }
 
-    // ================= RESTORE =================
+    // ================= RESTORE INCIDENT =================
     @Override
     public IncidentResponse restoreIncident(Long id) {
 
@@ -206,19 +280,11 @@ public class IncidentServiceImpl implements IncidentService {
         return mapToResponse(repository.save(incident));
     }
 
-    // ================= ASSIGN =================
+    // ================= ASSIGN INCIDENT =================
     @Override
     public IncidentResponse assignIncident(Long id, String assignedTo) {
 
         Incident incident = getIncidentOrThrow(id);
-
-        String loggedInUser = getLoggedInUsername();
-        boolean admin = isAdmin();
-
-        if (!admin && !assignedTo.equals(loggedInUser)) {
-            throw new AccessDeniedException(
-                    "Engineers can assign incidents only to themselves");
-        }
 
         User user = userRepository.findByUsername(assignedTo)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
@@ -226,29 +292,14 @@ public class IncidentServiceImpl implements IncidentService {
         incident.setAssignedTo(user);
         incident.setUpdatedAt(LocalDateTime.now());
 
-        return mapToResponse(repository.save(incident));
-    }
+        Incident savedIncident = repository.save(incident);
 
-    // ================= AUDIT =================
-    @Override
-    public List<IncidentAuditResponse> getIncidentAudit(Long incidentId) {
+        publisher.publishEvent(new IncidentAssignedEvent(savedIncident));
 
-        Incident incident = getIncidentOrThrow(incidentId);
-        enforceOwnershipForRead(incident);
-
-        return auditRepository
-                .findByIncidentIdOrderByChangedAtAsc(incidentId)
-                .stream()
-                .map(audit -> IncidentAuditResponse.builder()
-                        .oldStatus(audit.getOldStatus())
-                        .newStatus(audit.getNewStatus())
-                        .changedAt(audit.getChangedAt())
-                        .build())
-                .toList();
+        return mapToResponse(savedIncident);
     }
 
     // ================= COMMENTS =================
-
     @Override
     public IncidentComment addComment(Long incidentId, String message, String username) {
 
@@ -273,7 +324,7 @@ public class IncidentServiceImpl implements IncidentService {
         getIncidentOrThrow(incidentId);
 
         return incidentCommentRepository
-                .findByIncidentIdOrderByCreatedAtAsc(incidentId);
+                .findByIncidentId(incidentId);
     }
 
     // ================= DASHBOARD =================
@@ -309,12 +360,8 @@ public class IncidentServiceImpl implements IncidentService {
     }
 
     // ================= UTIL =================
-
     private String getLoggedInUsername() {
-        return SecurityContextHolder
-                .getContext()
-                .getAuthentication()
-                .getName();
+        return SecurityContextHolder.getContext().getAuthentication().getName();
     }
 
     private boolean isAdmin() {
@@ -328,9 +375,8 @@ public class IncidentServiceImpl implements IncidentService {
 
     private Incident getIncidentOrThrow(Long id) {
         return repository.findById(id)
-                .orElseThrow(() ->
-                        new ResourceNotFoundException(
-                                "Incident not found with id: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Incident not found with id: " + id));
     }
 
     private LocalDateTime calculateDueDate(Priority priority) {
@@ -338,15 +384,10 @@ public class IncidentServiceImpl implements IncidentService {
         LocalDateTime now = LocalDateTime.now();
 
         switch (priority) {
-            case HIGH:
-                return now.plusHours(4);
-            case MEDIUM:
-                return now.plusHours(8);
-            case LOW:
-                return now.plusHours(24);
-            default:
-                throw new IllegalArgumentException(
-                        "Invalid priority: " + priority);
+            case HIGH: return now.plusHours(4);
+            case MEDIUM: return now.plusHours(8);
+            case LOW: return now.plusHours(24);
+            default: throw new IllegalArgumentException("Invalid priority: " + priority);
         }
     }
 
@@ -358,29 +399,26 @@ public class IncidentServiceImpl implements IncidentService {
 
             case OPEN:
                 if (next != Status.IN_PROGRESS)
-                    throw new IllegalArgumentException(
-                            "Invalid transition from OPEN to " + next);
+                    throw new IllegalArgumentException("Invalid transition");
                 break;
 
             case IN_PROGRESS:
                 if (next != Status.RESOLVED)
-                    throw new IllegalArgumentException(
-                            "Invalid transition from IN_PROGRESS to " + next);
+                    throw new IllegalArgumentException("Invalid transition");
                 break;
 
             case RESOLVED:
-                if (next != Status.CLOSED && next != Status.IN_PROGRESS)
-                    throw new IllegalArgumentException(
-                            "Invalid transition from RESOLVED to " + next);
+                if (next != Status.CLOSED)
+                    throw new IllegalArgumentException("Invalid transition");
                 break;
 
             case CLOSED:
-                throw new IllegalArgumentException(
-                        "Cannot modify a CLOSED incident");
+                throw new IllegalArgumentException("Closed incident cannot change");
         }
     }
 
     private IncidentResponse mapToResponse(Incident incident) {
+
         return IncidentResponse.builder()
                 .id(incident.getId())
                 .title(incident.getTitle())
@@ -396,7 +434,6 @@ public class IncidentServiceImpl implements IncidentService {
                 )
                 .build();
     }
-    // ================= OWNERSHIP =================
 
     private void enforceOwnershipForRead(Incident incident) {
 
@@ -425,4 +462,6 @@ public class IncidentServiceImpl implements IncidentService {
                     "You are not allowed to modify this incident");
         }
     }
+
+
 }

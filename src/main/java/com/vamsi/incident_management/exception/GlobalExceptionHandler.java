@@ -89,6 +89,21 @@ public class GlobalExceptionHandler {
     }
 
     // 500 - Generic Exception
+//    @ExceptionHandler(Exception.class)
+//    public ResponseEntity<ApiError> handleGeneric(
+//            Exception ex,
+//            HttpServletRequest request) {
+//
+//        ApiError error = ApiError.builder()
+//                .timestamp(LocalDateTime.now())
+//                .status(HttpStatus.INTERNAL_SERVER_ERROR.value())
+//                .error("Internal Server Error")
+//                .message("Something went wrong")
+//                .path(request.getRequestURI())
+//                .build();
+//
+//        return new ResponseEntity<>(error, HttpStatus.INTERNAL_SERVER_ERROR);
+//    }
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiError> handleGeneric(
             Exception ex,
@@ -98,9 +113,11 @@ public class GlobalExceptionHandler {
                 .timestamp(LocalDateTime.now())
                 .status(HttpStatus.INTERNAL_SERVER_ERROR.value())
                 .error("Internal Server Error")
-                .message("Something went wrong")
+                .message(ex.getMessage()) // ✅ SHOW REAL ERROR
                 .path(request.getRequestURI())
                 .build();
+
+        ex.printStackTrace(); // ✅ also print in console
 
         return new ResponseEntity<>(error, HttpStatus.INTERNAL_SERVER_ERROR);
     }

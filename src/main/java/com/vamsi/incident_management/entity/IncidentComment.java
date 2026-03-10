@@ -1,5 +1,6 @@
 package com.vamsi.incident_management.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -18,25 +19,24 @@ public class IncidentComment {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // ================= INCIDENT RELATION =================
+    // 🔥 Prevent lazy loading serialization issue
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "incident_id", nullable = false)
+    @JsonIgnore
     private Incident incident;
 
-    // ================= USER RELATION =================
+    // 🔥 Prevent lazy loading serialization issue
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
+    @JsonIgnore
     private User user;
 
-    // ================= COMMENT MESSAGE =================
     @Column(nullable = false, length = 1000)
     private String message;
 
-    // ================= CREATED TIME =================
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
 
-    // ================= AUTO TIMESTAMP =================
     @PrePersist
     public void prePersist() {
         this.createdAt = LocalDateTime.now();
