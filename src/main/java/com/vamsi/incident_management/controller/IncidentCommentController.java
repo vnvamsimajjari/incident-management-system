@@ -1,6 +1,7 @@
 package com.vamsi.incident_management.controller;
 
 import com.vamsi.incident_management.dto.CommentRequest;
+import com.vamsi.incident_management.dto.CommentResponse;
 import com.vamsi.incident_management.entity.IncidentComment;
 import com.vamsi.incident_management.service.IncidentCommentService;
 
@@ -25,10 +26,16 @@ public class IncidentCommentController {
         return ResponseEntity.ok(savedComment);
     }
 
-    // ✅ FIXED: Get comments by incident
+    // ✅ Get Comments by Incident (DTO response)
     @GetMapping("/incident/{incidentId}")
-    public ResponseEntity<List<IncidentComment>> getCommentsByIncident(@PathVariable Long incidentId) {
-        List<IncidentComment> comments = commentService.getCommentsByIncident(incidentId);
+    public ResponseEntity<List<CommentResponse>> getCommentsByIncident(@PathVariable Long incidentId) {
+
+        if (incidentId == null) {
+            return ResponseEntity.badRequest().build(); // small safety check
+        }
+
+        List<CommentResponse> comments = commentService.getCommentsByIncident(incidentId);
+
         return ResponseEntity.ok(comments);
     }
 }

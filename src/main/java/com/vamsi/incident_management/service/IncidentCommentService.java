@@ -1,6 +1,7 @@
 package com.vamsi.incident_management.service;
 
 import com.vamsi.incident_management.dto.CommentRequest;
+import com.vamsi.incident_management.dto.CommentResponse;
 import com.vamsi.incident_management.entity.Incident;
 import com.vamsi.incident_management.entity.IncidentComment;
 import com.vamsi.incident_management.entity.User;
@@ -25,18 +26,22 @@ public class IncidentCommentService {
     @Autowired
     private UserRepository userRepository;
 
-    // ✅ ADD COMMENT (existing)
+    // ✅ ADD COMMENT
     public IncidentComment addComment(CommentRequest request) {
 
         if (request.getIncidentId() == null) {
             throw new RuntimeException("Incident ID cannot be null");
         }
 
+        if (request.getComment() == null || request.getComment().isBlank()) {
+            throw new RuntimeException("Comment cannot be empty");
+        }
+
         // Fetch incident
         Incident incident = incidentRepository.findById(request.getIncidentId())
                 .orElseThrow(() -> new RuntimeException("Incident not found with ID: " + request.getIncidentId()));
 
-        // Mandatory user (temporary)
+        // Temporary user (replace with JWT later)
         User user = userRepository.findById(1L)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
@@ -49,13 +54,26 @@ public class IncidentCommentService {
         return commentRepository.save(comment);
     }
 
-    // NEW: GET COMMENTS BY INCIDENT
-    public List<IncidentComment> getCommentsByIncident(Long incidentId) {
+    // ✅ GET COMMENTS BY INCIDENT (DTO response)
+    public List<CommentResponse> getCommentsByIncident(Long incidentId) {
 
         if (incidentId == null) {
             throw new RuntimeException("Incident ID cannot be null");
         }
 
-        return commentRepository.findByIncidentId(incidentId);
+        return commentRepository.findByIncidentIdOrderByCreatedAtAsc(incidentId)
+                .stream()
+                .map(comment -> CommentResponse.builder()
+                        .id(comment.getId())
+                        .message(comment.getMessage())
+                        .createdAt(comment.getCreatedAt())
+                        .username(
+                                comment.getUser() != null
+                                        ? comment.getUser().getUsername()
+                                        : "Unknown"
+                        )
+                        .build()
+                )
+                .toList();
     }
 }

@@ -7,6 +7,8 @@ import java.util.List;
 
 public interface IncidentCommentRepository extends JpaRepository<IncidentComment, Long> {
 
-    // ✅ Fetch comments by incident ID
     List<IncidentComment> findByIncidentId(Long incidentId);
+
+
+    List<IncidentComment> findByIncidentIdOrderByCreatedAtAsc(Long incidentId);
 }
