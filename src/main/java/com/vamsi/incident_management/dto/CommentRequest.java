@@ -1,39 +1,19 @@
 package com.vamsi.incident_management.dto;
 
-import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.NoArgsConstructor;
+import lombok.AllArgsConstructor;
 
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
 public class CommentRequest {
 
-    @NotNull(message = "Incident ID is required")
-    private Long incidentId;
-
-    @NotBlank(message = "Comment cannot be empty")
-    private String comment;
-
-    // Default constructor
-    public CommentRequest() {
-    }
-
-    // Parameterized constructor
-    public CommentRequest(Long incidentId, String comment) {
-        this.incidentId = incidentId;
-        this.comment = comment;
-    }
-
-    public Long getIncidentId() {
-        return incidentId;
-    }
-
-    public void setIncidentId(Long incidentId) {
-        this.incidentId = incidentId;
-    }
-
-    public String getComment() {
-        return comment;
-    }
-
-    public void setComment(String comment) {
-        this.comment = comment;
-    }
+    @NotBlank(message = "Comment message is required")
+    @Size(max = 1000, message = "Comment must not exceed 1000 characters")
+    private String message;
 }

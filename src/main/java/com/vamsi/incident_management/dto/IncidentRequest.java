@@ -19,7 +19,9 @@ public class IncidentRequest {
     @NotNull(message = "Priority is mandatory")
     private Priority priority;
 
-    //Ownership
-    @NotBlank(message = "Assigned engineer username is mandatory")
+    @NotBlank(message = "Assigned engineer is mandatory")
     private String assignedTo;
+
+  //  @NotNull(message = "SLA minutes is mandatory")
+    private Integer slaMinutes;
 }

@@ -40,8 +40,8 @@ POST /api/comments
 
 Request Body:
 {
-  "incidentId": 7,
-  "comment": "Second test comment"
+"incidentId": 7,
+"comment": "Second test comment"
 }
 
 Fields:
@@ -56,12 +56,12 @@ GET /api/comments/incident/{incidentId}
 
 Sample Response:
 [
-  {
-    "id": 1,
-    "message": "audit restarted successfully",
-    "createdAt": "2026-03-22T16:55:33",
-    "username": "admin"
-  }
+{
+"id": 1,
+"message": "audit restarted successfully",
+"createdAt": "2026-03-22T16:55:33",
+"username": "admin"
+}
 ]
 
 ---

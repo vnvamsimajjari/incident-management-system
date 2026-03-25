@@ -1,6 +1,8 @@
 package com.vamsi.incident_management.repository;
 
 import com.vamsi.incident_management.entity.Incident;
+import com.vamsi.incident_management.entity.Status;
+
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.EntityGraph;
@@ -17,11 +19,11 @@ public interface IncidentRepository
         extends JpaRepository<Incident, Long>,
         JpaSpecificationExecutor<Incident> {
 
-    // Pagination + fetch assigned user to avoid N+1 problem
+    // ================= PAGINATION + FETCH OPTIMIZATION =================
     @EntityGraph(attributePaths = {"assignedTo"})
     Page<Incident> findAll(Specification<Incident> spec, Pageable pageable);
 
-    // Optimized query for SLA breach detection
+    // ================= SLA BREACH DETECTION =================
     @Query("""
         SELECT i FROM Incident i
         WHERE i.breached = false
@@ -31,47 +33,16 @@ public interface IncidentRepository
     """)
     List<Incident> findIncidentsWithBreachedSla(@Param("now") LocalDateTime now);
 
-    // Dashboard: breached incidents
-    @Query("""
-        SELECT i FROM Incident i
-        WHERE i.breached = true
-        AND i.deleted = false
-    """)
-    List<Incident> findBreachedIncidents();
+    // ================= INCIDENT LIST HELPERS =================
+    List<Incident> findByBreachedTrueAndDeletedFalse();
 
-    // Dashboard: incidents assigned to logged-in user
-    @Query("""
-        SELECT i FROM Incident i
-        WHERE i.assignedTo.username = :username
-        AND i.deleted = false
-    """)
-    List<Incident> findIncidentsAssignedTo(@Param("username") String username);
+    List<Incident> findByAssignedToUsernameAndDeletedFalse(String username);
 
-    // Dashboard summary counts
-    @Query("""
-        SELECT COUNT(i) FROM Incident i
-        WHERE i.deleted = false
-    """)
-    Long countAllActive();
+    // ================= COUNT METHODS (FOR DASHBOARD SUPPORT) =================
+    int countByStatus(Status status);
+    @Query("SELECT i.status, COUNT(i) FROM Incident i WHERE i.deleted = false GROUP BY i.status")
+    List<Object[]> countByStatusGroup();
 
-    @Query("""
-        SELECT COUNT(i) FROM Incident i
-        WHERE i.status = 'OPEN'
-        AND i.deleted = false
-    """)
-    Long countOpen();
-
-    @Query("""
-        SELECT COUNT(i) FROM Incident i
-        WHERE i.status = 'RESOLVED'
-        AND i.deleted = false
-    """)
-    Long countResolved();
-
-    @Query("""
-        SELECT COUNT(i) FROM Incident i
-        WHERE i.breached = true
-        AND i.deleted = false
-    """)
-    Long countBreached();
+    @Query("SELECT i.priority, COUNT(i) FROM Incident i WHERE i.deleted = false GROUP BY i.priority")
+    List<Object[]> countByPriorityGroup();
 }

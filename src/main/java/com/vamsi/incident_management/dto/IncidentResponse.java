@@ -23,4 +23,5 @@ public class IncidentResponse {
 
     // ADD THIS FIELD
     private String assignedTo;
+    private boolean breached;
 }

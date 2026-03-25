@@ -8,11 +8,10 @@ import lombok.Data;
 public class DashboardSummaryResponse {
 
     private Long totalIncidents;
-
     private Long openIncidents;
+    private Long closedIncidents;
 
+    // NEW FIELDS
     private Long resolvedIncidents;
-
     private Long breachedIncidents;
-
 }

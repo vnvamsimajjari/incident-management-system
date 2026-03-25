@@ -1,9 +1,10 @@
+// 🔥 FULL CLEAN VERSION (STRUCTURED, SAFE, COMPLETE)
+
 package com.vamsi.incident_management.service.impl;
 
 import com.vamsi.incident_management.dto.*;
 import com.vamsi.incident_management.entity.*;
-import com.vamsi.incident_management.event.IncidentAssignedEvent;
-import com.vamsi.incident_management.event.IncidentCreatedEvent;
+import com.vamsi.incident_management.event.*;
 import com.vamsi.incident_management.exception.ResourceNotFoundException;
 import com.vamsi.incident_management.repository.*;
 import com.vamsi.incident_management.service.IncidentService;
@@ -13,8 +14,7 @@ import lombok.RequiredArgsConstructor;
 
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.*;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.access.AccessDeniedException;
 
@@ -25,61 +25,70 @@ import java.util.List;
 @RequiredArgsConstructor
 public class IncidentServiceImpl implements IncidentService {
 
-
     private final IncidentRepository repository;
     private final IncidentAuditRepository auditRepository;
     private final UserRepository userRepository;
-    private final IncidentCommentRepository incidentCommentRepository;
+    private final IncidentCommentRepository commentRepository;
     private final ApplicationEventPublisher publisher;
 
-    // ================= CREATE INCIDENT =================
+    // ================= CREATE =================
     @Override
     public IncidentResponse createIncident(IncidentRequest request) {
 
-        String loggedInUser = getLoggedInUsername();
+        String user = getLoggedInUsername();
         boolean admin = isAdmin();
 
-        String assignedUsername = request.getAssignedTo();
+        String assigned = request.getAssignedTo();
 
-        if (!admin && assignedUsername != null && !assignedUsername.equals(loggedInUser)) {
-            throw new AccessDeniedException(
-                    "Engineers can create incidents only assigned to themselves");
+        if (!admin && assigned != null && !assigned.equals(user)) {
+            throw new AccessDeniedException("Engineers can assign only to themselves");
         }
 
-        String finalAssignedUser = admin ? assignedUsername : loggedInUser;
+        String finalUser = admin ? assigned : user;
 
-        User user = userRepository.findByUsername(finalAssignedUser)
-                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+        User assignedUser = userRepository.findByUsername(finalUser)
+                .orElseThrow(() -> new ResourceNotFoundException("User", "username", finalUser));
 
         LocalDateTime now = LocalDateTime.now();
+
+//        if (request.getSlaMinutes() == null || request.getSlaMinutes() <= 0) {
+//            throw new IllegalArgumentException("SLA minutes must be greater than 0");
+//        }
+
+        //LocalDateTime dueAt = now.plusMinutes(request.getSlaMinutes());
+        int slaMinutes = (request.getSlaMinutes() != null && request.getSlaMinutes() > 0)
+                ? request.getSlaMinutes()
+                : getDefaultSlaMinutes(request.getPriority());
+
+        LocalDateTime dueAt = now.plusMinutes(slaMinutes);
 
         Incident incident = Incident.builder()
                 .title(request.getTitle())
                 .description(request.getDescription())
                 .priority(request.getPriority())
                 .status(Status.OPEN)
-                .assignedTo(user)
+                .assignedTo(assignedUser)
                 .createdAt(now)
                 .updatedAt(now)
-                .dueAt(calculateDueDate(request.getPriority()))
+                //.dueAt(calculateDueDate(request.getPriority()))
+                .dueAt(dueAt)
                 .breached(false)
                 .build();
 
-        Incident savedIncident = repository.save(incident);
+        Incident saved = repository.save(incident);
 
-        publisher.publishEvent(new IncidentCreatedEvent(savedIncident));
+        publisher.publishEvent(new IncidentCreatedEvent(saved));
 
-        return mapToResponse(savedIncident);
+        return mapToResponse(saved);
     }
 
-    // ================= GET INCIDENT =================
+    // ================= GET =================
     @Override
     public IncidentResponse getIncident(Long id) {
-
         Incident incident = getIncidentOrThrow(id);
 
         if (incident.isDeleted()) {
-            throw new ResourceNotFoundException("Incident not found with id: " + id);
+            throw new ResourceNotFoundException("Incident", "id", id);
         }
 
         enforceOwnershipForRead(incident);
@@ -87,52 +96,57 @@ public class IncidentServiceImpl implements IncidentService {
         return mapToResponse(incident);
     }
 
-    // ================= FILTER INCIDENTS =================
     @Override
-    public Page<IncidentResponse> getAllIncidents(
-            Status status,
-            Priority priority,
-            Boolean breached,
-            Pageable pageable) {
+    public List<IncidentResponse> getBreachedIncidents() {
 
-        String loggedInUser = getLoggedInUsername();
-        boolean isAdmin = isAdmin();
+        return repository.findByBreachedTrueAndDeletedFalse()
+                .stream()
+                .map(this::mapToResponse)
+                .toList();
+    }
+    @Override
+    public List<IncidentResponse> getMyIncidents() {
 
-        return repository
-                .findAll(
-                        IncidentSpecification.filter(
-                                status,
-                                priority,
-                                breached,
-                                loggedInUser,
-                                !isAdmin
-                        ),
-                        pageable
-                )
-                .map(this::mapToResponse);
+        String username = getLoggedInUsername();
+
+        return repository.findByAssignedToUsernameAndDeletedFalse(username)
+                .stream()
+                .map(this::mapToResponse)
+                .toList();
     }
 
-    // ================= UPDATE INCIDENT =================
+    // ================= FILTER =================
+    @Override
+    public Page<IncidentResponse> getAllIncidents(
+            Status status, Priority priority, Boolean breached, Pageable pageable) {
+
+        return repository.findAll(
+                IncidentSpecification.filter(status, priority, breached,
+                        getLoggedInUsername(), !isAdmin()),
+                pageable
+        ).map(this::mapToResponse);
+    }
+
+    // ================= UPDATE =================
     @Override
     public IncidentResponse updateIncident(Long id, IncidentRequest request) {
 
         Incident incident = getIncidentOrThrow(id);
         enforceOwnershipForWrite(incident);
 
-        String loggedInUser = getLoggedInUsername();
-        boolean admin = isAdmin();
+        String user = getLoggedInUsername();
 
         if (request.getAssignedTo() != null) {
 
-            if (!admin && !request.getAssignedTo().equals(loggedInUser)) {
-                throw new AccessDeniedException(
-                        "Engineers can assign incidents only to themselves");
+            if (!isAdmin() && !request.getAssignedTo().equals(user)) {
+                throw new AccessDeniedException("Not allowed to assign others");
             }
 
-            User user = userRepository.findByUsername(request.getAssignedTo())
-                    .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+            User assigned = userRepository.findByUsername(request.getAssignedTo())
+                    .orElseThrow(() -> new ResourceNotFoundException(
+                            "User", "username", request.getAssignedTo()));
 
-            incident.setAssignedTo(user);
+            incident.setAssignedTo(assigned);
         }
 
         incident.setTitle(request.getTitle());
@@ -143,27 +157,24 @@ public class IncidentServiceImpl implements IncidentService {
         return mapToResponse(repository.save(incident));
     }
 
-    // ================= STATUS UPDATE =================
+    // ================= STATUS =================
     @Override
     public IncidentResponse updateIncidentStatus(Long id, Status status) {
 
         Incident incident = getIncidentOrThrow(id);
         enforceOwnershipForWrite(incident);
 
-        Status oldStatus = incident.getStatus();
+        Status old = incident.getStatus();
 
-        validateStatusTransition(oldStatus, status);
+        validateStatusTransition(old, status);
 
-        if (oldStatus != status) {
-
-            IncidentAudit audit = IncidentAudit.builder()
+        if (old != status) {
+            auditRepository.save(IncidentAudit.builder()
                     .incidentId(id)
-                    .oldStatus(oldStatus)
+                    .oldStatus(old)
                     .newStatus(status)
                     .changedAt(LocalDateTime.now())
-                    .build();
-
-            auditRepository.save(audit);
+                    .build());
         }
 
         incident.setStatus(status);
@@ -172,75 +183,123 @@ public class IncidentServiceImpl implements IncidentService {
         return mapToResponse(repository.save(incident));
     }
 
-    // ================= RESOLVE INCIDENT =================
+    // ================= RESOLVE =================
     @Override
     public IncidentResponse resolveIncident(Long id) {
 
         Incident incident = getIncidentOrThrow(id);
         enforceOwnershipForWrite(incident);
 
-        if (incident.getStatus() != Status.IN_PROGRESS) {
-            throw new IllegalStateException(
-                    "Only IN_PROGRESS incidents can be resolved");
+        if (!Status.IN_PROGRESS.equals(incident.getStatus())) {
+            throw new IllegalStateException("Must be IN_PROGRESS to resolve");
         }
 
         incident.setStatus(Status.RESOLVED);
-        incident.setResolvedAt(LocalDateTime.now());
         incident.setUpdatedAt(LocalDateTime.now());
 
-        if (incident.getDueAt() != null &&
-                LocalDateTime.now().isAfter(incident.getDueAt())) {
-            incident.setBreached(true);
-        }
-
-        Incident savedIncident = repository.save(incident);
-
-        IncidentAudit audit = IncidentAudit.builder()
-                .incidentId(savedIncident.getId())
-                .oldStatus(Status.IN_PROGRESS)
-                .newStatus(Status.RESOLVED)
-                .changedAt(LocalDateTime.now())
-                .build();
-
-        auditRepository.save(audit);
-
-        return mapToResponse(savedIncident);
+        return mapToResponse(repository.save(incident));
     }
 
-    // ================= CLOSE INCIDENT =================
+    // ================= CLOSE =================
     @Override
     public IncidentResponse closeIncident(Long id) {
 
         Incident incident = getIncidentOrThrow(id);
 
         if (!isAdmin()) {
-            throw new AccessDeniedException(
-                    "Only admin can close incidents");
+            throw new AccessDeniedException("Only admin can close");
         }
 
-        if (incident.getStatus() != Status.RESOLVED) {
-            throw new IllegalStateException(
-                    "Only RESOLVED incidents can be closed");
+        if (!Status.RESOLVED.equals(incident.getStatus())) {
+            throw new IllegalStateException("Only RESOLVED can be closed");
         }
 
         incident.setStatus(Status.CLOSED);
         incident.setUpdatedAt(LocalDateTime.now());
 
-        Incident savedIncident = repository.save(incident);
-
-        return mapToResponse(savedIncident);
+        return mapToResponse(repository.save(incident));
     }
 
-    // ================= INCIDENT AUDIT =================
+    // ================= ASSIGN =================
+    @Override
+    public IncidentResponse assignIncident(Long id, String username) {
+
+        Incident incident = getIncidentOrThrow(id);
+
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new ResourceNotFoundException("User", "username", username));
+
+        incident.setAssignedTo(user);
+        incident.setUpdatedAt(LocalDateTime.now());
+
+        Incident saved = repository.save(incident);
+
+        publisher.publishEvent(new IncidentAssignedEvent(saved));
+
+        return mapToResponse(saved);
+    }
+
+    // ================= COMMENTS =================
+    @Override
+    public IncidentComment addComment(Long id, String message, String username) {
+
+        if (message == null || message.trim().isEmpty()) {
+            throw new IllegalArgumentException("Comment cannot be empty");
+        }
+
+        Incident incident = getIncidentOrThrow(id);
+
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new ResourceNotFoundException("User", "username", username));
+
+        return commentRepository.save(IncidentComment.builder()
+                .incident(incident)
+                .user(user)
+                .message(message)
+                .createdAt(LocalDateTime.now())
+                .build());
+    }
+
+    @Override
+    public List<IncidentComment> getComments(Long id) {
+        getIncidentOrThrow(id);
+        return commentRepository.findByIncidentId(id);
+    }
+
+    // ================= DASHBOARD COUNT =================
+
+    @Override
+    public int getTotalIncidents() {
+        return (int) repository.count();
+    }
+
+    @Override
+    public int getOpenIncidents() {
+        return repository.countByStatus(Status.OPEN);
+    }
+
+    @Override
+    public int getClosedIncidents() {
+        return repository.countByStatus(Status.CLOSED);
+    }
+
+    @Override
+    public int getResolvedIncidents() {
+        return repository.countByStatus(Status.RESOLVED);
+    }
+
+    @Override
+    public int getBreachedCount() {
+        return repository.findByBreachedTrueAndDeletedFalse().size();
+    }
+    // ================= AUDIT =================
     @Override
     public List<IncidentAuditResponse> getIncidentAudit(Long incidentId) {
 
-        getIncidentOrThrow(incidentId);
-
-        return auditRepository
-                .findByIncidentIdOrderByChangedAtAsc(incidentId)
+        return auditRepository.findByIncidentIdOrderByChangedAtDesc(incidentId)
                 .stream()
                 .map(audit -> IncidentAuditResponse.builder()
+                        .id(audit.getId())
                         .oldStatus(audit.getOldStatus())
                         .newStatus(audit.getNewStatus())
                         .changedAt(audit.getChangedAt())
@@ -248,115 +307,28 @@ public class IncidentServiceImpl implements IncidentService {
                 .toList();
     }
 
-    // ================= DELETE INCIDENT =================
+    // ================= DELETE =================
     @Override
     public void deleteIncident(Long id) {
 
         Incident incident = getIncidentOrThrow(id);
-        enforceOwnershipForWrite(incident);
 
         incident.setDeleted(true);
-        incident.setDeletedAt(LocalDateTime.now());
-        incident.setDeletedBy(getLoggedInUsername());
+        incident.setUpdatedAt(LocalDateTime.now());
 
         repository.save(incident);
     }
 
-    // ================= RESTORE INCIDENT =================
+    // ================= RESTORE =================
     @Override
     public IncidentResponse restoreIncident(Long id) {
 
         Incident incident = getIncidentOrThrow(id);
 
-        if (!incident.isDeleted()) {
-            throw new IllegalStateException("Incident is not deleted");
-        }
-
         incident.setDeleted(false);
-        incident.setDeletedAt(null);
-        incident.setDeletedBy(null);
         incident.setUpdatedAt(LocalDateTime.now());
 
         return mapToResponse(repository.save(incident));
-    }
-
-    // ================= ASSIGN INCIDENT =================
-    @Override
-    public IncidentResponse assignIncident(Long id, String assignedTo) {
-
-        Incident incident = getIncidentOrThrow(id);
-
-        User user = userRepository.findByUsername(assignedTo)
-                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
-
-        incident.setAssignedTo(user);
-        incident.setUpdatedAt(LocalDateTime.now());
-
-        Incident savedIncident = repository.save(incident);
-
-        publisher.publishEvent(new IncidentAssignedEvent(savedIncident));
-
-        return mapToResponse(savedIncident);
-    }
-
-    // ================= COMMENTS =================
-    @Override
-    public IncidentComment addComment(Long incidentId, String message, String username) {
-
-        Incident incident = getIncidentOrThrow(incidentId);
-
-        User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
-
-        IncidentComment comment = IncidentComment.builder()
-                .incident(incident)
-                .user(user)
-                .message(message)
-                .createdAt(LocalDateTime.now())
-                .build();
-
-        return incidentCommentRepository.save(comment);
-    }
-
-    @Override
-    public List<IncidentComment> getComments(Long incidentId) {
-
-        getIncidentOrThrow(incidentId);
-
-        return incidentCommentRepository
-                .findByIncidentId(incidentId);
-    }
-
-    // ================= DASHBOARD =================
-    @Override
-    public List<IncidentResponse> getBreachedIncidents() {
-
-        return repository.findBreachedIncidents()
-                .stream()
-                .map(this::mapToResponse)
-                .toList();
-    }
-
-    @Override
-    public List<IncidentResponse> getMyIncidents() {
-
-        String username = getLoggedInUsername();
-
-        return repository.findIncidentsAssignedTo(username)
-                .stream()
-                .map(this::mapToResponse)
-                .toList();
-    }
-
-    @Override
-    public DashboardSummaryResponse getDashboardSummary() {
-
-        return DashboardSummaryResponse.builder()
-                .totalIncidents(repository.countAllActive())
-                .openIncidents(repository.countOpen())
-                .resolvedIncidents(repository.countResolved())
-                .breachedIncidents(repository.countBreached())
-                .build();
     }
 
     // ================= UTIL =================
@@ -365,103 +337,72 @@ public class IncidentServiceImpl implements IncidentService {
     }
 
     private boolean isAdmin() {
-        return SecurityContextHolder
-                .getContext()
-                .getAuthentication()
-                .getAuthorities()
-                .stream()
+        return SecurityContextHolder.getContext().getAuthentication()
+                .getAuthorities().stream()
                 .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
     }
 
     private Incident getIncidentOrThrow(Long id) {
         return repository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException(
-                        "Incident not found with id: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Incident", "id", id));
     }
 
     private LocalDateTime calculateDueDate(Priority priority) {
-
-        LocalDateTime now = LocalDateTime.now();
-
-        switch (priority) {
-            case HIGH: return now.plusHours(4);
-            case MEDIUM: return now.plusHours(8);
-            case LOW: return now.plusHours(24);
-            default: throw new IllegalArgumentException("Invalid priority: " + priority);
-        }
+        return switch (priority) {
+            case HIGH -> LocalDateTime.now().plusHours(2);
+            case MEDIUM -> LocalDateTime.now().plusHours(6);
+            case LOW -> LocalDateTime.now().plusHours(12);
+            default -> throw new IllegalArgumentException("Invalid priority: " + priority);
+        };
     }
 
     private void validateStatusTransition(Status current, Status next) {
-
         if (current == next) return;
 
         switch (current) {
-
-            case OPEN:
-                if (next != Status.IN_PROGRESS)
-                    throw new IllegalArgumentException("Invalid transition");
-                break;
-
-            case IN_PROGRESS:
-                if (next != Status.RESOLVED)
-                    throw new IllegalArgumentException("Invalid transition");
-                break;
-
-            case RESOLVED:
-                if (next != Status.CLOSED)
-                    throw new IllegalArgumentException("Invalid transition");
-                break;
-
-            case CLOSED:
-                throw new IllegalArgumentException("Closed incident cannot change");
+            case OPEN -> { if (next != Status.IN_PROGRESS) throw new IllegalArgumentException("Invalid"); }
+            case IN_PROGRESS -> { if (next != Status.RESOLVED) throw new IllegalArgumentException("Invalid"); }
+            case RESOLVED -> { if (next != Status.CLOSED) throw new IllegalArgumentException("Invalid"); }
+            case CLOSED -> throw new IllegalArgumentException("Closed cannot change");
         }
     }
 
-    private IncidentResponse mapToResponse(Incident incident) {
-
+    private IncidentResponse mapToResponse(Incident i) {
         return IncidentResponse.builder()
-                .id(incident.getId())
-                .title(incident.getTitle())
-                .description(incident.getDescription())
-                .priority(incident.getPriority())
-                .status(incident.getStatus())
-                .createdAt(incident.getCreatedAt())
-                .updatedAt(incident.getUpdatedAt())
-                .assignedTo(
-                        incident.getAssignedTo() != null
-                                ? incident.getAssignedTo().getUsername()
-                                : null
-                )
+                .id(i.getId())
+                .title(i.getTitle())
+                .description(i.getDescription())
+                .priority(i.getPriority())
+                .status(i.getStatus())
+                .createdAt(i.getCreatedAt())
+                .updatedAt(i.getUpdatedAt())
+                .assignedTo(i.getAssignedTo() != null ? i.getAssignedTo().getUsername() : null)
+                .breached(i.isBreached())
                 .build();
     }
-
-    private void enforceOwnershipForRead(Incident incident) {
-
+    private int getDefaultSlaMinutes(Priority priority) {
+        return switch (priority) {
+            case HIGH -> 120;    // 2 hours
+            case MEDIUM -> 360;  // 6 hours
+            case LOW -> 720;     // 12 hours
+            default -> 60;
+        };
+    }
+    private void enforceOwnershipForRead(Incident i) {
         if (isAdmin()) return;
 
-        String loggedInUser = getLoggedInUsername();
-
-        if (incident.getAssignedTo() == null ||
-                !incident.getAssignedTo().getUsername().equals(loggedInUser)) {
-
-            throw new AccessDeniedException(
-                    "You are not allowed to view this incident");
+        if (i.getAssignedTo() == null ||
+                !i.getAssignedTo().getUsername().equals(getLoggedInUsername())) {
+            throw new AccessDeniedException("Not allowed");
         }
     }
 
-    private void enforceOwnershipForWrite(Incident incident) {
-
+    private void enforceOwnershipForWrite(Incident i) {
         if (isAdmin()) return;
 
-        String loggedInUser = getLoggedInUsername();
-
-        if (incident.getAssignedTo() == null ||
-                !incident.getAssignedTo().getUsername().equals(loggedInUser)) {
-
-            throw new AccessDeniedException(
-                    "You are not allowed to modify this incident");
+        if (i.getAssignedTo() == null ||
+                !i.getAssignedTo().getUsername().equals(getLoggedInUsername())) {
+            throw new AccessDeniedException("Not allowed");
         }
     }
-
-
 }

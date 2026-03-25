@@ -10,5 +10,5 @@ public interface IncidentCommentRepository extends JpaRepository<IncidentComment
     List<IncidentComment> findByIncidentId(Long incidentId);
 
 
-    List<IncidentComment> findByIncidentIdOrderByCreatedAtAsc(Long incidentId);
+    List<IncidentComment> findByIncidentIdOrderByCreatedAtDesc(Long incidentId);
 }

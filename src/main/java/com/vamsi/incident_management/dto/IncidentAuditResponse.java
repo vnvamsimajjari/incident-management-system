@@ -10,7 +10,10 @@ import java.time.LocalDateTime;
 @Builder
 public class IncidentAuditResponse {
 
+    private Long id;                 // ✅ ADD THIS
+
     private Status oldStatus;
     private Status newStatus;
+
     private LocalDateTime changedAt;
 }

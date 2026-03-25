@@ -2,41 +2,40 @@ package com.vamsi.incident_management.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
-
 import java.time.LocalDateTime;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 @Entity
-@Table(name = "incident_escalations")
+@Table(name = "notifications")
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class IncidentEscalation {
+public class Notification {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // 🔗 Proper relation
+    // 🔒 Hide user from response
+    @JsonIgnore
     @ManyToOne
-    @JoinColumn(name = "incident_id", nullable = false)
-    private Incident incident;
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user;
 
-    // 🔢 Escalation Level (1,2,3)
     @Column(nullable = false)
-    private Integer level;
+    private String message;
 
-    // 📝 Reason
     @Column(nullable = false)
-    private String reason;
+    private boolean isRead;
 
-    // ⏱ Timestamp
     @Column(name = "created_at")
     private LocalDateTime createdAt;
 
     @PrePersist
     public void onCreate() {
         this.createdAt = LocalDateTime.now();
+        this.isRead = false;
     }
 }

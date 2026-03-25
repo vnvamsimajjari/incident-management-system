@@ -87,10 +87,10 @@ public class SlaBreachScheduler {
         if (oldPriority != newPriority) {
 
             IncidentEscalation escalation = IncidentEscalation.builder()
-                    .incidentId(incident.getId())
-                    .oldPriority(oldPriority)
-                    .newPriority(newPriority)
-                    .escalatedAt(LocalDateTime.now())
+                    .incident(incident)   // ✅ CORRECT
+//                    .oldPriority(oldPriority)
+//                    .newPriority(newPriority)
+//                    .escalatedAt(LocalDateTime.now())
                     .build();
 
             escalationRepository.save(escalation);

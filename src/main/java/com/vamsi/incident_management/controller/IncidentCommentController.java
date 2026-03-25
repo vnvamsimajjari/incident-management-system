@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.*;
 
 import jakarta.validation.Valid;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/comments")
@@ -19,23 +20,41 @@ public class IncidentCommentController {
     @Autowired
     private IncidentCommentService commentService;
 
-    // ✅ Add Comment API
-    @PostMapping
-    public ResponseEntity<IncidentComment> addComment(@Valid @RequestBody CommentRequest request) {
-        IncidentComment savedComment = commentService.addComment(request);
-        return ResponseEntity.ok(savedComment);
+    // ================= ADD COMMENT =================
+    @PostMapping("/incident/{incidentId}")
+    public ResponseEntity<?> addComment(
+            @PathVariable Long incidentId,
+            @Valid @RequestBody CommentRequest request) {
+
+        IncidentComment savedComment =
+                commentService.addComment(incidentId, request, "admin");
+
+        return ResponseEntity.ok(
+                Map.of(
+                        "status", 200,
+                        "message", "Comment added successfully",
+                        "id", savedComment.getId(),
+                        "createdAt", savedComment.getCreatedAt()
+                )
+        );
     }
 
-    // ✅ Get Comments by Incident (DTO response)
+    // ================= GET COMMENTS =================
     @GetMapping("/incident/{incidentId}")
-    public ResponseEntity<List<CommentResponse>> getCommentsByIncident(@PathVariable Long incidentId) {
+    public ResponseEntity<List<CommentResponse>> getCommentsByIncident(
+            @PathVariable Long incidentId) {
 
-        if (incidentId == null) {
-            return ResponseEntity.badRequest().build(); // small safety check
-        }
-
-        List<CommentResponse> comments = commentService.getCommentsByIncident(incidentId);
+        List<CommentResponse> comments =
+                commentService.getCommentsByIncident(incidentId);
 
         return ResponseEntity.ok(comments);
+    }
+
+    // ================= EXCEPTION =================
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<?> handleBadRequest(IllegalArgumentException ex) {
+        return ResponseEntity.badRequest().body(
+                Map.of("status", 400, "message", ex.getMessage())
+        );
     }
 }
