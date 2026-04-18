@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Create Incident</title>
+</head>
+<body>
+
+<h2>Create Incident</h2>
+
+<form onsubmit="handleCreateIncident(event)">
+    <input type="text" id="title" placeholder="Title" required><br>
+    <textarea id="description" placeholder="Description"></textarea><br>
+
+    <select id="priority">
+        <option value="LOW">LOW</option>
+        <option value="MEDIUM">MEDIUM</option>
+        <option value="HIGH">HIGH</option>
+    </select><br>
+
+    <button type="submit">Create</button>
+</form>
+
+<br>
+<a href="view-incidents.html">Back</a>
+
+<script src="../js/api.js"></script>
+<script src="../js/app.js"></script>
+
+</body>
+</html>

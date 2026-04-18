@@ -23,26 +23,54 @@ public interface IncidentRepository
     @EntityGraph(attributePaths = {"assignedTo"})
     Page<Incident> findAll(Specification<Incident> spec, Pageable pageable);
 
-    // ================= SLA BREACH DETECTION =================
+
+    // ================= ACTIVE INCIDENTS =================
     @Query("""
         SELECT i FROM Incident i
-        WHERE i.breached = false
-        AND i.deleted = false
-        AND i.status <> 'RESOLVED'
-        AND i.dueAt < :now
+        WHERE i.deleted = false
+        AND i.status <> com.vamsi.incident_management.entity.Status.RESOLVED
     """)
-    List<Incident> findIncidentsWithBreachedSla(@Param("now") LocalDateTime now);
+    List<Incident> findAllActiveIncidents();
+
+
+    // ================= SLA BREACH (NEW - REQUIRED) =================
+    List<Incident> findByBreachedFalseAndDueAtBefore(LocalDateTime now);
+
+
+    // ================= ESCALATION QUERY (FIXED) =================
+    @Query("""
+        SELECT i FROM Incident i
+        WHERE i.deleted = false
+        AND i.status <> com.vamsi.incident_management.entity.Status.RESOLVED
+        AND i.dueAt IS NOT NULL
+        AND i.dueAt <= :now
+        AND (i.escalationLevel IS NULL OR i.escalationLevel < 2)
+    """)
+    List<Incident> findIncidentsForEscalation(@Param("now") LocalDateTime now);
+
 
     // ================= INCIDENT LIST HELPERS =================
     List<Incident> findByBreachedTrueAndDeletedFalse();
 
     List<Incident> findByAssignedToUsernameAndDeletedFalse(String username);
 
+
     // ================= COUNT METHODS (FOR DASHBOARD SUPPORT) =================
     int countByStatus(Status status);
-    @Query("SELECT i.status, COUNT(i) FROM Incident i WHERE i.deleted = false GROUP BY i.status")
+
+    @Query("""
+        SELECT i.status, COUNT(i)
+        FROM Incident i
+        WHERE i.deleted = false
+        GROUP BY i.status
+    """)
     List<Object[]> countByStatusGroup();
 
-    @Query("SELECT i.priority, COUNT(i) FROM Incident i WHERE i.deleted = false GROUP BY i.priority")
+    @Query("""
+        SELECT i.priority, COUNT(i)
+        FROM Incident i
+        WHERE i.deleted = false
+        GROUP BY i.priority
+    """)
     List<Object[]> countByPriorityGroup();
 }

@@ -4,14 +4,13 @@ import com.vamsi.incident_management.security.JwtAuthenticationFilter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-import org.springframework.http.HttpMethod;
-
 
 @Configuration
 @RequiredArgsConstructor
@@ -28,13 +27,22 @@ public class SecurityConfig {
                 .httpBasic(basic -> basic.disable())
                 .sessionManagement(session ->
                         session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-//                .authorizeHttpRequests(auth -> auth
-//                        .requestMatchers("/api/auth/**").permitAll()
-//                        .anyRequest().authenticated()
-//                )
+
                 .authorizeHttpRequests(auth -> auth
+
+                        // ✅ Allow frontend files (VERY IMPORTANT)
+                        .requestMatchers(
+                                "/",
+                                "/index.html",
+                                "/pages/**",
+                                "/css/**",
+                                "/js/**"
+                        ).permitAll()
+
+                        // ✅ Allow auth APIs (login/register)
                         .requestMatchers("/api/auth/**").permitAll()
 
+                        // 🔒 Incident APIs (Role-based)
                         .requestMatchers(HttpMethod.GET, "/api/incidents/**")
                         .hasAnyRole("ADMIN", "ENGINEER")
 
@@ -47,8 +55,11 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.DELETE, "/api/incidents/**")
                         .hasRole("ADMIN")
 
+                        // 🔒 Everything else secured
                         .anyRequest().authenticated()
                 )
+
+                // ✅ JWT Filter
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();

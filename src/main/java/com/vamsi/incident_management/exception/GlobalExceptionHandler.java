@@ -20,13 +20,11 @@ public class GlobalExceptionHandler {
             ResourceNotFoundException ex,
             HttpServletRequest request) {
 
-        ApiError error = buildError(
+        return buildResponse(
                 HttpStatus.NOT_FOUND,
                 "Not Found",
                 ex.getMessage(),
                 request);
-
-        return new ResponseEntity<>(error, HttpStatus.NOT_FOUND);
     }
 
     // ================= 403 =================
@@ -35,13 +33,11 @@ public class GlobalExceptionHandler {
             AccessDeniedException ex,
             HttpServletRequest request) {
 
-        ApiError error = buildError(
+        return buildResponse(
                 HttpStatus.FORBIDDEN,
                 "Forbidden",
-                ex.getMessage(), // ✅ FIXED
+                ex.getMessage(),
                 request);
-
-        return new ResponseEntity<>(error, HttpStatus.FORBIDDEN);
     }
 
     // ================= 400 VALIDATION =================
@@ -56,13 +52,11 @@ public class GlobalExceptionHandler {
                 .map(FieldError::getDefaultMessage)
                 .collect(Collectors.joining(", "));
 
-        ApiError error = buildError(
+        return buildResponse(
                 HttpStatus.BAD_REQUEST,
                 "Validation Failed",
                 message,
                 request);
-
-        return new ResponseEntity<>(error, HttpStatus.BAD_REQUEST);
     }
 
     // ================= 400 BUSINESS RULE =================
@@ -71,13 +65,11 @@ public class GlobalExceptionHandler {
             IllegalStateException ex,
             HttpServletRequest request) {
 
-        ApiError error = buildError(
+        return buildResponse(
                 HttpStatus.BAD_REQUEST,
                 "Invalid State",
                 ex.getMessage(),
                 request);
-
-        return new ResponseEntity<>(error, HttpStatus.BAD_REQUEST);
     }
 
     // ================= 400 BAD INPUT =================
@@ -86,13 +78,11 @@ public class GlobalExceptionHandler {
             IllegalArgumentException ex,
             HttpServletRequest request) {
 
-        ApiError error = buildError(
+        return buildResponse(
                 HttpStatus.BAD_REQUEST,
                 "Bad Request",
                 ex.getMessage(),
                 request);
-
-        return new ResponseEntity<>(error, HttpStatus.BAD_REQUEST);
     }
 
     // ================= 500 =================
@@ -101,28 +91,42 @@ public class GlobalExceptionHandler {
             Exception ex,
             HttpServletRequest request) {
 
-        // 🔥 Replace with logger in future
+        String path = request.getRequestURI();
+
+        // 🔥 IMPORTANT FIX: allow static files to bypass handler
+        if (path.startsWith("/js/") ||
+                path.startsWith("/css/") ||
+                path.startsWith("/pages/") ||
+                path.equals("/") ||
+                path.equals("/index.html")) {
+
+            throw new RuntimeException(ex); // let Spring handle static resources
+        }
+
         System.err.println("Unhandled Exception: " + ex.getMessage());
 
-        ApiError error = buildError(
+        return buildResponse(
                 HttpStatus.INTERNAL_SERVER_ERROR,
                 "Internal Server Error",
                 "Something went wrong",
                 request);
-
-        return new ResponseEntity<>(error, HttpStatus.INTERNAL_SERVER_ERROR);
     }
 
-    // ================= COMMON BUILDER =================
-    private ApiError buildError(HttpStatus status, String error,
-                                String message, HttpServletRequest request) {
+    // ================= COMMON RESPONSE BUILDER =================
+    private ResponseEntity<ApiError> buildResponse(
+            HttpStatus status,
+            String error,
+            String message,
+            HttpServletRequest request) {
 
-        return ApiError.builder()
+        ApiError apiError = ApiError.builder()
                 .timestamp(LocalDateTime.now())
                 .status(status.value())
                 .error(error)
                 .message(message)
                 .path(request.getRequestURI())
                 .build();
+
+        return new ResponseEntity<>(apiError, status);
     }
 }

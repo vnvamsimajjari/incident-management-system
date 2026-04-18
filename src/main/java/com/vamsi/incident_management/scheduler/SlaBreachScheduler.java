@@ -1,8 +1,7 @@
 package com.vamsi.incident_management.scheduler;
 
-import com.vamsi.incident_management.entity.*;
-import com.vamsi.incident_management.repository.*;
-import com.vamsi.incident_management.service.EmailService;
+import com.vamsi.incident_management.entity.Incident;
+import com.vamsi.incident_management.repository.IncidentRepository;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -19,101 +18,34 @@ import java.util.List;
 public class SlaBreachScheduler {
 
     private final IncidentRepository incidentRepository;
-    private final UserRepository userRepository;
-    private final EmailService emailService;
-    private final IncidentEscalationRepository escalationRepository;
 
-    // Runs every 5 minutes
-    @Scheduled(cron = "0 */5 * * * *")
+    /**
+     * Runs every 1 minute
+     * - Marks incidents as breached
+     */
+    @Scheduled(fixedRate = 60000)
     public void checkSlaBreaches() {
 
-        log.info("Running SLA breach check...");
-
-        LocalDateTime now = LocalDateTime.now();
-
-        List<Incident> incidents =
-                incidentRepository.findIncidentsWithBreachedSla(now);
-
-        if (incidents.isEmpty()) {
-            log.info("No SLA breaches detected.");
-            return;
-        }
-
-        for (Incident incident : incidents) {
-
-            incident.setBreached(true);
-
-            escalateIncident(incident);
-
-            incidentRepository.save(incident);
-
-            sendNotification(incident);
-
-            log.warn("SLA breached and processed for incident {}", incident.getId());
-        }
-
-        log.info("SLA breach check completed. {} incidents updated.", incidents.size());
-    }
-
-    private void escalateIncident(Incident incident) {
-
-        Priority oldPriority = incident.getPriority();
-        Priority newPriority = oldPriority;
-
-        switch (oldPriority) {
-
-            case LOW:
-                newPriority = Priority.MEDIUM;
-                incident.setPriority(newPriority);
-                log.info("Incident {} escalated from LOW → MEDIUM", incident.getId());
-                break;
-
-            case MEDIUM:
-                newPriority = Priority.HIGH;
-                incident.setPriority(newPriority);
-                log.info("Incident {} escalated from MEDIUM → HIGH", incident.getId());
-                break;
-
-            case HIGH:
-                User admin = userRepository.findByUsername("admin")
-                        .orElseThrow(() -> new RuntimeException("Admin user not found"));
-
-                incident.setAssignedTo(admin);
-                log.info("Incident {} escalated to ADMIN", incident.getId());
-                break;
-        }
-
-        // Save escalation history
-        if (oldPriority != newPriority) {
-
-            IncidentEscalation escalation = IncidentEscalation.builder()
-                    .incident(incident)   // ✅ CORRECT
-//                    .oldPriority(oldPriority)
-//                    .newPriority(newPriority)
-//                    .escalatedAt(LocalDateTime.now())
-                    .build();
-
-            escalationRepository.save(escalation);
-        }
-    }
-
-    private void sendNotification(Incident incident) {
+        log.info("SLA Breach Scheduler started...");
 
         try {
+            LocalDateTime now = LocalDateTime.now();
 
-            if (incident.getAssignedTo() != null &&
-                    incident.getAssignedTo().getEmail() != null) {
+            List<Incident> incidents =
+                    incidentRepository.findByBreachedFalseAndDueAtBefore(now);
 
-                String email = incident.getAssignedTo().getEmail();
-
-                emailService.sendSlaBreachEmail(
-                        email,
-                        incident.getId()
-                );
+            for (Incident incident : incidents) {
+                incident.setBreached(true);
             }
 
-        } catch (Exception e) {
-            log.error("Failed to send SLA notification for incident {}", incident.getId(), e);
+            incidentRepository.saveAll(incidents);
+
+            log.info("Breached incidents count: {}", incidents.size());
+
+        } catch (Exception ex) {
+            log.error("Error in SLA breach scheduler", ex);
         }
+
+        log.info("SLA Breach Scheduler completed.");
     }
 }

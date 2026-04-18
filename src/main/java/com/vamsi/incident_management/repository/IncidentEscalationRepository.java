@@ -8,9 +8,16 @@ import java.util.Optional;
 
 public interface IncidentEscalationRepository extends JpaRepository<IncidentEscalation, Long> {
 
-    // ✅ Get all escalations (latest first)
+    // ✅ Full history (latest first)
     List<IncidentEscalation> findByIncident_IdOrderByCreatedAtDesc(Long incidentId);
 
-    // ✅ Check duplicate level
+
+    Optional<IncidentEscalation>
+    findTopByIncidentIdOrderByLevelDesc(Long incidentId);
+
+    // ⚠️ Legacy check (use carefully)
     Optional<IncidentEscalation> findByIncident_IdAndLevel(Long incidentId, Integer level);
+
+    // ✅ Count escalations (debug / analytics)
+    long countByIncident_Id(Long incidentId);
 }

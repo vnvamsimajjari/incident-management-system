@@ -18,25 +18,23 @@ public class IncidentEscalation {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // 🔗 Proper relation
     @ManyToOne
     @JoinColumn(name = "incident_id", nullable = false)
     private Incident incident;
 
-    // 🔢 Escalation Level (1,2,3)
-    @Column(nullable = false)
     private Integer level;
 
-    // 📝 Reason
-    @Column(nullable = false)
+    private Integer oldLevel; // 🔥 add this
+
     private String reason;
 
-    // ⏱ Timestamp
-    @Column(name = "created_at")
     private LocalDateTime createdAt;
+
+    private LocalDateTime escalatedAt;
 
     @PrePersist
     public void onCreate() {
         this.createdAt = LocalDateTime.now();
+        this.escalatedAt = LocalDateTime.now();
     }
 }

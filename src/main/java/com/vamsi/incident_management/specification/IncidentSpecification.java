@@ -21,9 +21,9 @@ public class IncidentSpecification {
         return (root, query, cb) -> {
 
             List<Predicate> predicates = new ArrayList<>();
-
+            predicates.add(cb.equal(root.get("deleted"), false));
             // Hide soft-deleted incidents
-            predicates.add(cb.isFalse(root.get("deleted")));
+            //predicates.add(cb.isFalse(root.get("deleted")));
 
             if (status != null) {
                 predicates.add(cb.equal(root.get("status"), status));

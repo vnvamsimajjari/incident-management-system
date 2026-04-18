@@ -24,4 +24,6 @@ public class IncidentRequest {
 
   //  @NotNull(message = "SLA minutes is mandatory")
     private Integer slaMinutes;
+
+
 }

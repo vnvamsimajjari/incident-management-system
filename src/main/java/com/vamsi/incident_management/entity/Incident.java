@@ -2,8 +2,8 @@ package com.vamsi.incident_management.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
-
 import java.time.LocalDateTime;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 @Entity
 @Table(name = "incidents")
@@ -49,6 +49,7 @@ public class Incident {
     // Ownership Field
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "assigned_to", nullable = false)
+    @JsonIgnore   // 🔥 FIX ADDED
     private User assignedTo;
 
     // ---------------- SOFT DELETE FIELDS ----------------
@@ -58,15 +59,22 @@ public class Incident {
     private LocalDateTime deletedAt;
 
     private String deletedBy;
-    // -----------------------------------------------------
 
-    // Auto-set timestamps
+    // ---------------- ESCALATION FIELDS ----------------
+    @Builder.Default
+    @Column(name = "escalation_level")
+    private Integer escalationLevel = 0;
+
+    @Column(name = "last_escalation_time")
+    private LocalDateTime lastEscalationTime;
+
+    // ---------------- AUTO TIMESTAMPS ----------------
     @PrePersist
     public void onCreate() {
         this.createdAt = LocalDateTime.now();
         this.updatedAt = LocalDateTime.now();
         this.breached = false;
-        this.deleted = false; // initialize soft delete
+        this.deleted = false;
     }
 
     @PreUpdate
