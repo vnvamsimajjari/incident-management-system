@@ -8,11 +8,16 @@ async function handleLogin(event) {
     try {
         const res = await loginUser({ username, password });
 
-        localStorage.setItem("token", res.token);
+        // ✅ CHECK TOKEN FIRST
+        if (res && res.token) {
+            localStorage.setItem("token", res.token);
 
-        alert("Login successful");
+            alert("Login successful");
 
-        window.location.href = "view-incidents.html";
+            window.location.href = "/pages/view-incidents.html";
+        } else {
+            alert("Invalid credentials");
+        }
 
     } catch (e) {
         alert("Login failed");

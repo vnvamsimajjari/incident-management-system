@@ -30,19 +30,27 @@ public class SecurityConfig {
 
                 .authorizeHttpRequests(auth -> auth
 
-                        // ✅ Allow frontend files (VERY IMPORTANT)
+                        // ✅ Static resources
                         .requestMatchers(
                                 "/",
                                 "/index.html",
                                 "/pages/**",
                                 "/css/**",
-                                "/js/**"
+                                "/js/**",
+                                "/assets/**",
+                                "/favicon.ico"
                         ).permitAll()
 
-                        // ✅ Allow auth APIs (login/register)
-                        .requestMatchers("/api/auth/**").permitAll()
+                        // ✅ Auth APIs
+                        .requestMatchers(
+                                "/api/auth/login",
+                                "/api/auth/register"
+                        ).permitAll()
 
-                        // 🔒 Incident APIs (Role-based)
+                        // ✅ Allow preflight (CORS)
+                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+
+                        // 🔒 Incident APIs
                         .requestMatchers(HttpMethod.GET, "/api/incidents/**")
                         .hasAnyRole("ADMIN", "ENGINEER")
 
@@ -55,7 +63,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.DELETE, "/api/incidents/**")
                         .hasRole("ADMIN")
 
-                        // 🔒 Everything else secured
+                        // 🔒 Everything else
                         .anyRequest().authenticated()
                 )
 
