@@ -2,7 +2,9 @@
 <html>
 <head>
     <title>View Incidents</title>
-    <link rel="stylesheet" href="../css/styles.css">
+
+    <!-- ✅ FIXED PATH -->
+    <link rel="stylesheet" href="/assets/css/styles.css">
 </head>
 
 <body onload="initPage()">
@@ -12,7 +14,7 @@
 <button onclick="logout()">Logout</button>
 <br><br>
 
-<table>
+<table border="1">
     <thead>
     <tr>
         <th>ID</th>
@@ -27,28 +29,26 @@
 <p id="emptyMessage" style="display:none;">No incidents found</p>
 
 <br>
-<a href="create-incident.html">Create Incident</a>
+<a href="/pages/create-incident.html">Create Incident</a>
 
-<script src="../js/api.js"></script>
-<script src="../js/app.js"></script>
+<!-- ✅ FIXED PATH -->
+<script src="/assets/js/api.js"></script>
+<script src="/assets/js/app.js"></script>
 
 <script>
-    // INIT PAGE
     function initPage() {
         const token = localStorage.getItem("token");
 
-        // Example 1: No token → redirect
+        // 🔒 No token → redirect
         if (!token) {
             alert("Please login first");
-            window.location.href = "login.html";
+            window.location.href = "/pages/login.html";
             return;
         }
 
         loadIncidents();
     }
 
-
-    // LOAD INCIDENTS
     async function loadIncidents() {
         try {
             const data = await getIncidents();
@@ -57,14 +57,15 @@
             const emptyMsg = document.getElementById("emptyMessage");
 
             table.innerHTML = "";
+            emptyMsg.style.display = "none";
 
-            // Example 2: Empty list
-            if (!data || data.length === 0 || data.content?.length === 0) {
+            const incidents = data.content || data;
+
+            // ✅ Empty check
+            if (!incidents || incidents.length === 0) {
                 emptyMsg.style.display = "block";
                 return;
             }
-
-            const incidents = data.content || data;
 
             incidents.forEach(inc => {
                 const row = `
@@ -75,7 +76,6 @@
                         <td>${inc.status}</td>
                     </tr>
                 `;
-
                 table.innerHTML += row;
             });
 
@@ -85,11 +85,9 @@
         }
     }
 
-
-    // LOGOUT
     function logout() {
         localStorage.removeItem("token");
-        window.location.href = "login.html";
+        window.location.href = "/pages/login.html";
     }
 </script>
 
