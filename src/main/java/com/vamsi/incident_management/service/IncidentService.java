@@ -14,13 +14,13 @@ import java.util.List;
 
 public interface IncidentService {
 
-    // CREATE
+    // ================= CREATE =================
     IncidentResponse createIncident(IncidentRequest request);
 
-    // GET
+    // ================= GET =================
     IncidentResponse getIncident(Long id);
 
-    // FILTER + PAGINATION
+    // ================= FILTER + PAGINATION =================
     Page<IncidentResponse> getAllIncidents(
             Status status,
             Priority priority,
@@ -28,43 +28,36 @@ public interface IncidentService {
             Pageable pageable
     );
 
-    // UPDATE
+    // ================= UPDATE =================
     IncidentResponse updateIncident(Long id, IncidentRequest request);
 
-    // ASSIGN
-    IncidentResponse assignIncident(Long id, String assignedEngineerUsername);
-
-    // STATUS
+    // 🔥 IMPORTANT: This is what your UI uses
     IncidentResponse updateIncidentStatus(Long id, Status status);
 
-    // LIFECYCLE
+    // ================= ASSIGN =================
+    IncidentResponse assignIncident(Long id, String assignedEngineerUsername);
+
+    // ================= LIFECYCLE =================
     IncidentResponse resolveIncident(Long id);
     IncidentResponse closeIncident(Long id);
 
-    // COMMENTS
+    // ================= COMMENTS =================
     IncidentComment addComment(Long incidentId, String message, String username);
     List<IncidentComment> getComments(Long incidentId);
 
-    // DASHBOARD LIST
+    // ================= DASHBOARD LIST =================
     List<IncidentResponse> getBreachedIncidents();
     List<IncidentResponse> getMyIncidents();
 
     // ================= DASHBOARD COUNT =================
     int getTotalIncidents();
-
     int getOpenIncidents();
-
     int getClosedIncidents();
-
     int getResolvedIncidents();
-
     int getBreachedCount();
 
     // ================= AUDIT =================
     List<IncidentAuditResponse> getIncidentAudit(Long incidentId);
 
-    // ================= DELETE / RESTORE =================
-    void deleteIncident(Long id);
 
-    IncidentResponse restoreIncident(Long id);
 }

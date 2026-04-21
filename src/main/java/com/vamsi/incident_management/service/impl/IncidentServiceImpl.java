@@ -308,28 +308,28 @@ public class IncidentServiceImpl implements IncidentService {
     }
 
     // ================= DELETE =================
-    @Override
-    public void deleteIncident(Long id) {
-
-        Incident incident = getIncidentOrThrow(id);
-
-        incident.setDeleted(true);
-        incident.setUpdatedAt(LocalDateTime.now());
-
-        repository.save(incident);
-    }
+//    @Override
+//    public void deleteIncident(Long id) {
+//
+//        Incident incident = getIncidentOrThrow(id);
+//
+//        incident.setDeleted(true);
+//        incident.setUpdatedAt(LocalDateTime.now());
+//
+//        repository.save(incident);
+//    }
 
     // ================= RESTORE =================
-    @Override
-    public IncidentResponse restoreIncident(Long id) {
-
-        Incident incident = getIncidentOrThrow(id);
-
-        incident.setDeleted(false);
-        incident.setUpdatedAt(LocalDateTime.now());
-
-        return mapToResponse(repository.save(incident));
-    }
+//    @Override
+//    public IncidentResponse restoreIncident(Long id) {
+//
+//        Incident incident = getIncidentOrThrow(id);
+//
+//        incident.setDeleted(false);
+//        incident.setUpdatedAt(LocalDateTime.now());
+//
+//        return mapToResponse(repository.save(incident));
+//    }
 
     // ================= UTIL =================
     private String getLoggedInUsername() {

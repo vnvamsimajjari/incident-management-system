@@ -30,27 +30,18 @@ public class IncidentController {
     // ================= CREATE =================
     @PostMapping
     @PreAuthorize("hasAnyRole('ADMIN','ENGINEER')")
-    public ResponseEntity<IncidentResponse> create(
-            @Valid @RequestBody IncidentRequest request) {
-
+    public ResponseEntity<IncidentResponse> create(@Valid @RequestBody IncidentRequest request) {
         return ResponseEntity.ok(service.createIncident(request));
     }
 
-    // ================= GET BY ID =================
+    // ================= GET =================
     @GetMapping("/{id}")
     @PreAuthorize("hasAnyRole('ADMIN','ENGINEER')")
     public ResponseEntity<IncidentResponse> getById(@PathVariable Long id) {
         return ResponseEntity.ok(service.getIncident(id));
     }
 
-    // ================= GET AUDIT =================
-    @GetMapping("/{id}/audit")
-    @PreAuthorize("hasAnyRole('ADMIN','ENGINEER')")
-    public ResponseEntity<List<IncidentAuditResponse>> getAudit(@PathVariable Long id) {
-        return ResponseEntity.ok(service.getIncidentAudit(id));
-    }
-
-    // ================= FILTER + PAGINATION =================
+    // ================= LIST =================
     @GetMapping
     @PreAuthorize("hasAnyRole('ADMIN','ENGINEER')")
     public ResponseEntity<Page<IncidentResponse>> getAll(
@@ -59,11 +50,10 @@ public class IncidentController {
             @RequestParam(required = false) Boolean breached,
             Pageable pageable) {
 
-        return ResponseEntity.ok(
-                service.getAllIncidents(status, priority, breached, pageable));
+        return ResponseEntity.ok(service.getAllIncidents(status, priority, breached, pageable));
     }
 
-    // ================= UPDATE INCIDENT =================
+    // ================= UPDATE FULL =================
     @PutMapping("/{id}")
     @PreAuthorize("hasAnyRole('ADMIN','ENGINEER')")
     public ResponseEntity<IncidentResponse> update(
@@ -73,7 +63,18 @@ public class IncidentController {
         return ResponseEntity.ok(service.updateIncident(id, request));
     }
 
-    // ================= ASSIGN INCIDENT =================
+    // ================= UPDATE STATUS (🔥 MAIN FIX) =================
+    @PutMapping("/{id}/status")
+    @PreAuthorize("hasAnyRole('ADMIN','ENGINEER')")
+    public ResponseEntity<IncidentResponse> updateStatus(
+            @PathVariable Long id,
+            @Valid @RequestBody IncidentStatusUpdateRequest request) {
+
+        return ResponseEntity.ok(
+                service.updateIncidentStatus(id, request.getStatus()));
+    }
+
+    // ================= ASSIGN =================
     @PutMapping("/{id}/assign")
     @PreAuthorize("hasAnyRole('ADMIN','ENGINEER')")
     public ResponseEntity<IncidentResponse> assignIncident(
@@ -82,17 +83,6 @@ public class IncidentController {
 
         return ResponseEntity.ok(
                 service.assignIncident(id, request.getAssignedEngineerUsername()));
-    }
-
-    // ================= STATUS UPDATE =================
-    @PatchMapping("/{id}/status")
-    @PreAuthorize("hasAnyRole('ADMIN','ENGINEER')")
-    public ResponseEntity<IncidentResponse> updateStatus(
-            @PathVariable Long id,
-            @Valid @RequestBody IncidentStatusUpdateRequest request) {
-
-        return ResponseEntity.ok(
-                service.updateIncidentStatus(id, request.getStatus()));
     }
 
     // ================= RESOLVE =================
@@ -109,38 +99,9 @@ public class IncidentController {
         return ResponseEntity.ok(service.closeIncident(id));
     }
 
-    // ================= DELETE INCIDENT =================
-    @DeleteMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<Void> delete(@PathVariable Long id) {
+    // ❌ DELETE REMOVED
 
-        service.deleteIncident(id);
-        return ResponseEntity.noContent().build();
-    }
-
-    // ================= RESTORE INCIDENT =================
-    @PatchMapping("/{id}/restore")
-    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<IncidentResponse> restoreIncident(@PathVariable Long id) {
-
-        return ResponseEntity.ok(service.restoreIncident(id));
-    }
-
-    // ================= BREACHED INCIDENTS =================
-    @GetMapping("/breached")
-    @PreAuthorize("hasAnyRole('ADMIN','ENGINEER')")
-    public ResponseEntity<List<IncidentResponse>> getBreachedIncidents() {
-        return ResponseEntity.ok(service.getBreachedIncidents());
-    }
-
-    // ================= MY INCIDENTS =================
-    @GetMapping("/my-incidents")
-    @PreAuthorize("hasAnyRole('ADMIN','ENGINEER')")
-    public ResponseEntity<List<IncidentResponse>> getMyIncidents() {
-        return ResponseEntity.ok(service.getMyIncidents());
-    }
-
-    // ================= ADD COMMENT =================
+    // ================= COMMENTS =================
     @PostMapping("/{id}/comments")
     @PreAuthorize("hasAnyRole('ADMIN','ENGINEER')")
     public ResponseEntity<IncidentComment> addComment(
@@ -152,27 +113,22 @@ public class IncidentController {
                 service.addComment(id, request.getMessage(), auth.getName()));
     }
 
-    // ================= GET COMMENTS =================
     @GetMapping("/{id}/comments")
     @PreAuthorize("hasAnyRole('ADMIN','ENGINEER')")
     public ResponseEntity<List<IncidentComment>> getComments(@PathVariable Long id) {
         return ResponseEntity.ok(service.getComments(id));
     }
 
-    // ================= ESCALATION HISTORY =================
-    @GetMapping("/{id}/escalations")
+    // ================= EXTRA =================
+    @GetMapping("/breached")
     @PreAuthorize("hasAnyRole('ADMIN','ENGINEER')")
-    public ResponseEntity<List<IncidentEscalation>> getEscalations(@PathVariable Long id) {
-
-        return ResponseEntity.ok(
-                escalationRepository.findByIncident_IdOrderByCreatedAtDesc(id));
+    public ResponseEntity<List<IncidentResponse>> getBreachedIncidents() {
+        return ResponseEntity.ok(service.getBreachedIncidents());
     }
 
-    // ================= NOTIFICATION LOGS =================
-    @GetMapping("/notifications")
-    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<List<NotificationLog>> getNotificationLogs() {
-
-        return ResponseEntity.ok(notificationLogRepository.findAll());
+    @GetMapping("/my-incidents")
+    @PreAuthorize("hasAnyRole('ADMIN','ENGINEER')")
+    public ResponseEntity<List<IncidentResponse>> getMyIncidents() {
+        return ResponseEntity.ok(service.getMyIncidents());
     }
 }
