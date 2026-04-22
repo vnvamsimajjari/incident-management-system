@@ -22,22 +22,29 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
 
         http
+                // 🔹 Disable CSRF
                 .csrf(csrf -> csrf.disable())
+
+                // 🔹 Disable default login
                 .formLogin(form -> form.disable())
                 .httpBasic(basic -> basic.disable())
-                .sessionManagement(session ->
-                        session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 
+                // 🔹 Stateless session
+                .sessionManagement(session ->
+                        session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+                )
+
+                // 🔥 Authorization rules
                 .authorizeHttpRequests(auth -> auth
 
-                        // ✅ Static resources
+                        // ✅ Static frontend files
                         .requestMatchers(
                                 "/",
                                 "/index.html",
                                 "/pages/**",
+                                "/assets/**",
                                 "/css/**",
                                 "/js/**",
-                                "/assets/**",
                                 "/favicon.ico"
                         ).permitAll()
 
@@ -47,32 +54,23 @@ public class SecurityConfig {
                                 "/api/auth/register"
                         ).permitAll()
 
-                        // ✅ Allow preflight (CORS)
+                        // 🔥 DEMO: allow all incident APIs
+                        .requestMatchers("/api/incidents/**").permitAll()
+
+                        // 🔥 Allow preflight requests
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
 
-                        // 🔒 Incident APIs
-                        .requestMatchers(HttpMethod.GET, "/api/incidents/**")
-                        .hasAnyRole("ADMIN", "ENGINEER")
-
-                        .requestMatchers(HttpMethod.POST, "/api/incidents/**")
-                        .hasRole("ADMIN")
-
-                        .requestMatchers(HttpMethod.PUT, "/api/incidents/**")
-                        .hasAnyRole("ADMIN", "ENGINEER")
-
-                        .requestMatchers(HttpMethod.DELETE, "/api/incidents/**")
-                        .hasRole("ADMIN")
-
-                        // 🔒 Everything else
-                        .anyRequest().authenticated()
+                        // 🔥 Allow everything else (for demo)
+                        .anyRequest().permitAll()
                 )
 
-                // ✅ JWT Filter
+                // 🔹 JWT filter (kept, not mandatory for demo)
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
 
+    // 🔥 FIX: Required for AuthController (IMPORTANT)
     @Bean
     public AuthenticationManager authenticationManager(
             AuthenticationConfiguration config) throws Exception {
