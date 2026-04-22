@@ -34,14 +34,14 @@ public class SecurityConfig {
                         session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 )
 
-                // 🔥 Authorization rules
+                // 🔥 AUTHORIZATION RULES
                 .authorizeHttpRequests(auth -> auth
 
-                        // ✅ Static frontend files
+                        // ✅ Public (login + static)
                         .requestMatchers(
                                 "/",
                                 "/index.html",
-                                "/pages/**",
+                                "/pages/login.html",
                                 "/assets/**",
                                 "/css/**",
                                 "/js/**",
@@ -54,23 +54,26 @@ public class SecurityConfig {
                                 "/api/auth/register"
                         ).permitAll()
 
-                        // 🔥 DEMO: allow all incident APIs
-                        .requestMatchers("/api/incidents/**").permitAll()
+                        // 🔥 PROTECT ALL PAGES
+                        .requestMatchers("/pages/**").permitAll()
 
-                        // 🔥 Allow preflight requests
+                        // 🔥 PROTECT INCIDENT APIs
+                        .requestMatchers("/api/incidents/**").authenticated()
+
+                        // 🔥 Allow preflight
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
 
-                        // 🔥 Allow everything else (for demo)
-                        .anyRequest().permitAll()
+                        // 🔒 Everything else
+                        .anyRequest().authenticated()
                 )
 
-                // 🔹 JWT filter (kept, not mandatory for demo)
+                // 🔹 JWT Filter
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
 
-    // 🔥 FIX: Required for AuthController (IMPORTANT)
+    // 🔹 Required for login
     @Bean
     public AuthenticationManager authenticationManager(
             AuthenticationConfiguration config) throws Exception {

@@ -23,7 +23,6 @@ public interface IncidentRepository
     @EntityGraph(attributePaths = {"assignedTo"})
     Page<Incident> findAll(Specification<Incident> spec, Pageable pageable);
 
-
     // ================= ACTIVE INCIDENTS =================
     @Query("""
         SELECT i FROM Incident i
@@ -32,12 +31,10 @@ public interface IncidentRepository
     """)
     List<Incident> findAllActiveIncidents();
 
-
-    // ================= SLA BREACH (NEW - REQUIRED) =================
+    // ================= SLA BREACH =================
     List<Incident> findByBreachedFalseAndDueAtBefore(LocalDateTime now);
 
-
-    // ================= ESCALATION QUERY (FIXED) =================
+    // ================= ESCALATION =================
     @Query("""
         SELECT i FROM Incident i
         WHERE i.deleted = false
@@ -48,15 +45,15 @@ public interface IncidentRepository
     """)
     List<Incident> findIncidentsForEscalation(@Param("now") LocalDateTime now);
 
-
-    // ================= INCIDENT LIST HELPERS =================
+    // ================= HELPERS =================
     List<Incident> findByBreachedTrueAndDeletedFalse();
 
     List<Incident> findByAssignedToUsernameAndDeletedFalse(String username);
 
+    // ================= COUNT METHODS =================
+    long countByStatus(Status status);
 
-    // ================= COUNT METHODS (FOR DASHBOARD SUPPORT) =================
-    int countByStatus(Status status);
+    long countByBreached(boolean breached);
 
     @Query("""
         SELECT i.status, COUNT(i)

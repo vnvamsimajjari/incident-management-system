@@ -17,34 +17,31 @@ async function loginUser(data) {
     return res.json();
 }
 
+
 // ================= AUTH HEADER =================
 function getAuthHeaders() {
     const token = localStorage.getItem("token");
 
-    if (!token) {
-        throw new Error("No token found");
-    }
-
     return {
         "Content-Type": "application/json",
-        "Authorization": "Bearer " + token
+        "Authorization": `Bearer ${token}`
     };
 }
+
 
 // ================= GET INCIDENTS =================
 async function getIncidents() {
     const res = await fetch(`${BASE_URL}/incidents`, {
-        method: "GET",
         headers: getAuthHeaders()
     });
 
     if (!res.ok) {
-        console.error("GET INCIDENTS ERROR:", res.status);
         throw new Error("Failed to fetch incidents: " + res.status);
     }
 
     return res.json();
 }
+
 
 // ================= CREATE INCIDENT =================
 async function createIncident(data) {
@@ -60,6 +57,7 @@ async function createIncident(data) {
 
     return res.json();
 }
+
 
 // ================= UPDATE STATUS =================
 async function updateIncidentStatus(id, status) {

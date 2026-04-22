@@ -23,7 +23,6 @@ public class IncidentServiceImpl implements IncidentService {
     private final IncidentRepository repository;
     private final IncidentAuditRepository auditRepository;
     private final UserRepository userRepository;
-    private final IncidentCommentRepository commentRepository;
     private final ApplicationEventPublisher publisher;
 
     // ================= CREATE =================
@@ -70,6 +69,30 @@ public class IncidentServiceImpl implements IncidentService {
                 .map(this::mapToResponse);
     }
 
+    // ================= GET BY ID =================
+    @Override
+    public IncidentResponse getIncidentById(Long id) {
+        Incident incident = repository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Incident", "id", id));
+
+        return mapToResponse(incident);
+    }
+
+    // ================= UPDATE INCIDENT =================
+    @Override
+    public IncidentResponse updateIncident(Long id, IncidentRequest request) {
+
+        Incident incident = repository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Incident", "id", id));
+
+        incident.setTitle(request.getTitle());
+        incident.setDescription(request.getDescription());
+        incident.setPriority(request.getPriority());
+        incident.setUpdatedAt(LocalDateTime.now());
+
+        return mapToResponse(repository.save(incident));
+    }
+
     // ================= STATUS UPDATE =================
     @Override
     public IncidentResponse updateIncidentStatus(Long id, Status status) {
@@ -81,7 +104,6 @@ public class IncidentServiceImpl implements IncidentService {
 
         validateStatusTransition(old, status);
 
-        // audit
         if (old != status) {
             auditRepository.save(IncidentAudit.builder()
                     .incidentId(id)
@@ -95,6 +117,12 @@ public class IncidentServiceImpl implements IncidentService {
         incident.setUpdatedAt(LocalDateTime.now());
 
         return mapToResponse(repository.save(incident));
+    }
+
+    // ================= AUDIT =================
+    @Override
+    public List<IncidentAuditResponse> getAuditHistory(Long id) {
+        throw new UnsupportedOperationException("Audit not implemented");
     }
 
     // ================= UTIL =================

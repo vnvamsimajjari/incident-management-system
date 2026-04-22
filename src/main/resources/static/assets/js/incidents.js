@@ -1,19 +1,28 @@
-const API_URL = "http://localhost:8080/api";
+// ================= AUTH CHECK =================
+(function () {
+  const token = localStorage.getItem("token");
+
+  if (!token || token === "undefined" || token === "null") {
+    window.location.href = "/pages/login.html";
+  }
+})();
+
+
+// ================= REDIRECT FLAG =================
+let isRedirecting = false;
+
 
 // ================= LOAD INCIDENTS =================
 async function loadIncidents() {
   try {
-    const res = await fetch(`${API_URL}/incidents`);
-    const data = await res.json();
-
-    console.log("FULL RESPONSE:", data);
+    const data = await getIncidents(); // from api.js
 
     const table = document.getElementById("incidentsTable");
     table.innerHTML = "";
 
-    const incidents = data.content ? data.content : data;
+    const incidents = data.content || [];
 
-    if (!incidents || incidents.length === 0) {
+    if (incidents.length === 0) {
       table.innerHTML = `<tr><td colspan="6" style="text-align:center;">No incidents found</td></tr>`;
       return;
     }
@@ -31,57 +40,64 @@ async function loadIncidents() {
       `;
     });
 
-  } catch (err) {
-    console.error("Error:", err);
+  } catch (e) {
+    console.error(e);
+
+    if (!isRedirecting) {
+      logout();
+    }
   }
 }
+
 
 // ================= ACTION BUTTONS =================
 function renderActions(i) {
 
-  if (i.status === "OPEN") {
-    return `<button onclick="updateStatus(${i.id}, 'IN_PROGRESS')">Start</button>`;
-  }
+  switch (i.status) {
 
-  if (i.status === "IN_PROGRESS") {
-    return `<button onclick="updateStatus(${i.id}, 'RESOLVED')">Resolve</button>`;
-  }
+    case "OPEN":
+      return `<button onclick="updateStatus(${i.id}, 'IN_PROGRESS')">Start</button>`;
 
-  if (i.status === "RESOLVED") {
-    return `<button onclick="updateStatus(${i.id}, 'CLOSED')">Close</button>`;
-  }
+    case "IN_PROGRESS":
+      return `<button onclick="updateStatus(${i.id}, 'RESOLVED')">Resolve</button>`;
 
-  return `<span>Done</span>`;
+    case "RESOLVED":
+      return `<button onclick="updateStatus(${i.id}, 'CLOSED')">Close</button>`;
+
+    default:
+      return `<span>Done</span>`;
+  }
 }
+
 
 // ================= UPDATE STATUS =================
 async function updateStatus(id, status) {
   try {
-    const res = await fetch(
-      `${API_URL}/incidents/${id}/status`,
-      {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          status: status
-        })
-      }
-    );
-
-    if (!res.ok) {
-      const err = await res.text();
-      alert(err);
-      return;
-    }
+    await updateIncidentStatus(id, status);
 
     alert("Status updated ✅");
     loadIncidents();
 
   } catch (e) {
     console.error(e);
+
+    if (!isRedirecting) {
+      logout();
+    }
   }
 }
+
+
+// ================= LOGOUT =================
+function logout() {
+  if (isRedirecting) return;
+
+  isRedirecting = true;
+
+  localStorage.removeItem("token");
+  window.location.href = "/pages/login.html";
+}
+
+
 // ================= INIT =================
 loadIncidents();

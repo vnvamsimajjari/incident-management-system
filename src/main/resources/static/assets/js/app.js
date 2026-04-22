@@ -1,4 +1,5 @@
-// LOGIN HANDLER
+
+// ================= LOGIN =================
 async function handleLogin(event) {
     event.preventDefault();
 
@@ -8,61 +9,102 @@ async function handleLogin(event) {
     try {
         const res = await loginUser({ username, password });
 
-        // ✅ CHECK TOKEN FIRST
+        console.log("LOGIN RESPONSE:", res);
+
         if (res && res.token) {
             localStorage.setItem("token", res.token);
 
-            alert("Login successful");
-
-            window.location.href = "/pages/view-incidents.html";
+            window.location.href = "/pages/incidents.html";
         } else {
-            alert("Invalid credentials");
+            showError("Invalid credentials");
         }
 
     } catch (e) {
-        alert("Login failed");
         console.error(e);
+        showError("Login failed");
     }
 }
 
 
-// LOAD INCIDENTS
+// ================= LOAD INCIDENTS =================
 async function loadIncidents() {
+
+    const token = localStorage.getItem("token");
+
+    if (!token || token === "undefined" || token === "null") {
+        window.location.href = "/pages/login.html";
+        return;
+    }
+
     try {
-        const data = await getIncidents();
+        const data = await getIncidents(); // ✅ FIXED (no param)
 
-        const table = document.getElementById("incidentTable");
+        const table = document.getElementById("incidentsTable"); // ✅ FIXED
+        table.innerHTML = "";
 
-        data.content.forEach(inc => {
-            const row = `<tr>
-                <td>${inc.id}</td>
-                <td>${inc.title}</td>
-                <td>${inc.priority}</td>
-                <td>${inc.status}</td>
-            </tr>`;
-            table.innerHTML += row;
+        const incidents = data.content || [];
+
+        if (incidents.length === 0) {
+            table.innerHTML = `<tr><td colspan="4">No incidents found</td></tr>`;
+            return;
+        }
+
+        incidents.forEach(inc => {
+            table.innerHTML += `
+                <tr>
+                    <td>${inc.id}</td>
+                    <td>${inc.title}</td>
+                    <td>${inc.priority}</td>
+                    <td>${inc.status}</td>
+                </tr>
+            `;
         });
 
     } catch (e) {
-        alert("Failed to load incidents");
+        console.error(e);
+
+        // silent redirect (no alert loop)
+        logout();
     }
 }
 
 
-// CREATE INCIDENT
+// ================= CREATE INCIDENT =================
 async function handleCreateIncident(event) {
     event.preventDefault();
+
+    const token = localStorage.getItem("token");
+
+    if (!token || token === "undefined" || token === "null") {
+        window.location.href = "/pages/login.html";
+        return;
+    }
 
     const title = document.getElementById("title").value;
     const description = document.getElementById("description").value;
     const priority = document.getElementById("priority").value;
 
     try {
-        await createIncident({ title, description, priority });
+        await createIncident({ title, description, priority }); // ✅ FIXED
 
         alert("Incident created");
 
     } catch (e) {
-        alert("Failed to create incident");
+        console.error(e);
+        logout();
     }
+}
+
+
+// ================= LOGOUT =================
+function logout() {
+    localStorage.removeItem("token");
+    window.location.href = "/pages/login.html";
+}
+
+
+// ================= ERROR HANDLER =================
+function showError(message) {
+    const error = document.getElementById("error");
+    if (error) error.innerText = message;
 }
