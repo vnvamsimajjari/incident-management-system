@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Login</title>
+    <title>Login - IMS</title>
 
     <style>
         body {
@@ -17,29 +17,42 @@
             background: white;
             padding: 30px;
             border-radius: 8px;
-            width: 300px;
+            width: 320px;
             box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+
+        h2 {
+            text-align: center;
+            margin-bottom: 20px;
         }
 
         input {
             width: 100%;
             padding: 10px;
             margin: 10px 0;
+            border: 1px solid #ccc;
+            border-radius: 5px;
         }
 
         button {
             width: 100%;
             padding: 10px;
-            background: #007bff;
+            background: #185FA5;
             color: white;
             border: none;
             cursor: pointer;
+            border-radius: 5px;
+        }
+
+        button:hover {
+            background: #0C447C;
         }
 
         .error {
             color: red;
             font-size: 14px;
             min-height: 18px;
+            text-align: center;
         }
     </style>
 </head>
@@ -50,7 +63,7 @@
 
     <h2>Login</h2>
 
-    <form onsubmit="handleLogin(event)">
+    <form id="loginForm">
         <input type="text" id="username" placeholder="Username" required>
         <input type="password" id="password" placeholder="Password" required>
         <button type="submit">Login</button>
@@ -60,9 +73,27 @@
 
 </div>
 
-<!-- JS -->
-<script src="/assets/js/api.js"></script>
-<script src="/assets/js/app.js"></script>
+<script>
+    document.getElementById("loginForm").addEventListener("submit", async function (e) {
+    e.preventDefault();
+
+    console.log("Login clicked"); // debug
+
+    const username = document.getElementById("username").value;
+    const password = document.getElementById("password").value;
+
+    try {
+        const data = await loginUser(username, password);
+
+        console.log("Response:", data);
+
+        window.location.href = "index.html";
+
+    } catch (error) {
+        document.getElementById("error").innerText = "Login failed";
+    }
+});
+</script>
 
 </body>
 </html>
