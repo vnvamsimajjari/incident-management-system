@@ -1,14 +1,15 @@
 // ================================
 // 🚀 APP START
 // ================================
-console.log("✅ Dashboard JS Loaded");
+console.clear();
+console.log("🚀 Dashboard JS Loaded");
 
 // ================================
 // 🔐 AUTH CHECK
 // ================================
 const token = localStorage.getItem("token");
 
-if (!token) {
+if (!token || token === "undefined" || token === "null") {
     console.warn("❌ No token → redirecting to login");
     window.location.href = "/pages/login.html";
 }
@@ -20,16 +21,14 @@ async function loadDashboard() {
     try {
         console.log("📡 Fetching incidents...");
 
-        const response = await fetch("/api/incidents", {
+        const response = await fetch("/api/incidents?page=0&size=100", {
             method: "GET",
             headers: {
                 "Authorization": "Bearer " + token
             }
         });
 
-        // 🔴 Handle auth failure
         if (response.status === 401 || response.status === 403) {
-            console.warn("❌ Unauthorized → redirecting to login");
             localStorage.removeItem("token");
             window.location.href = "/pages/login.html";
             return;
@@ -43,7 +42,14 @@ async function loadDashboard() {
 
         console.log("✅ API Response:", data);
 
-        updateDashboard(data);
+        const incidents = Array.isArray(data)
+            ? data
+            : (Array.isArray(data?.content) ? data.content : []);
+
+        // 🔥 ALL UPDATES
+        updateDashboard(incidents);
+        renderRecentIncidents(incidents);
+        updateCharts(incidents);
 
     } catch (error) {
         console.error("❌ Dashboard error:", error);
@@ -57,43 +63,118 @@ async function loadDashboard() {
 }
 
 // ================================
-// 🧮 UPDATE UI
+// 🧮 UPDATE CARDS
 // ================================
-function updateDashboard(data) {
+function updateDashboard(incidents) {
 
-    // 🔥 Handle both cases (paginated + direct array)
-    const incidents = Array.isArray(data)
-        ? data
-        : (data.content || []);
+    const total = incidents.length;
 
-    if (!Array.isArray(incidents)) {
-        console.error("❌ Invalid data format:", data);
+    const open = incidents.filter(i =>
+        i.status?.toUpperCase() === "OPEN"
+    ).length;
+
+    const inProgress = incidents.filter(i =>
+        i.status?.toUpperCase() === "IN_PROGRESS"
+    ).length;
+
+    const resolved = incidents.filter(i =>
+        i.status?.toUpperCase() === "RESOLVED"
+    ).length;
+
+    const closed = incidents.filter(i =>
+        i.status?.toUpperCase() === "CLOSED"
+    ).length;
+
+    document.getElementById("totalCount").innerText = total;
+    document.getElementById("openCount").innerText = open;
+    document.getElementById("inProgressCount").innerText = inProgress;
+    document.getElementById("resolvedCount").innerText = resolved;
+    document.getElementById("closedCount").innerText = closed;
+}
+
+// ================================
+// 📋 RECENT INCIDENTS
+// ================================
+function renderRecentIncidents(incidents) {
+
+    const table = document.getElementById("recentIncidents");
+
+    table.innerHTML = "";
+
+    const sorted = [...incidents].sort((a, b) => b.id - a.id);
+    const recent = sorted.slice(0, 5);
+
+    if (recent.length === 0) {
+        table.innerHTML = `
+            <tr>
+                <td colspan="4" class="empty">
+                    No recent incidents
+                </td>
+            </tr>
+        `;
         return;
     }
 
-    // ============================
-    // 📊 CALCULATIONS
-    // ============================
+    recent.forEach(i => {
+        table.innerHTML += `
+            <tr>
+                <td>${i.title || "-"}</td>
+
+                <td>
+                    <span class="priority ${i.priority}">
+                        ${i.priority || "-"}
+                    </span>
+                </td>
+
+                <td>
+                    <span class="status ${i.status}">
+                        ${i.status || "-"}
+                    </span>
+                </td>
+
+                <td>${i.assignedTo || "N/A"}</td>
+            </tr>
+        `;
+    });
+}
+
+// ================================
+// 📊 CHARTS (THIS WAS MISSING)
+// ================================
+function updateCharts(incidents) {
+
     const total = incidents.length;
 
-   const open = incidents.filter(i => {
-       const s = i.status?.toUpperCase();
-       return ["OPEN", "IN_PROGRESS"].includes(s);
-   }).length;
+    const open = incidents.filter(i => i.status === "OPEN").length;
+    const progress = incidents.filter(i => i.status === "IN_PROGRESS").length;
+    const resolved = incidents.filter(i => i.status === "RESOLVED").length;
+    const closed = incidents.filter(i => i.status === "CLOSED").length;
 
-    const resolved = incidents.filter(i => {
-        const s = i.status?.toUpperCase();
-        return ["RESOLVED", "CLOSED"].includes(s);
-    }).length;
+    const high = incidents.filter(i => i.priority === "HIGH").length;
+    const medium = incidents.filter(i => i.priority === "MEDIUM").length;
+    const low = incidents.filter(i => i.priority === "LOW").length;
 
-    console.log("📊 Stats:", { total, open, resolved });
+    // 🔢 COUNTS
+    document.getElementById("openBarCount").innerText = open;
+    document.getElementById("progressBarCount").innerText = progress;
+    document.getElementById("resolvedBarCount").innerText = resolved;
+    document.getElementById("closedBarCount").innerText = closed;
 
-    // ============================
-    // 🖥️ UPDATE DOM
-    // ============================
-    document.getElementById("totalCount").innerText = total;
-    document.getElementById("openCount").innerText = open;
-    document.getElementById("resolvedCount").innerText = resolved;
+    document.getElementById("highCount").innerText = high;
+    document.getElementById("mediumCount").innerText = medium;
+    document.getElementById("lowCount").innerText = low;
+
+    // 📏 WIDTH %
+    const calc = (val) => total === 0 ? 0 : (val / total) * 100;
+
+    document.getElementById("openBar").style.width = calc(open) + "%";
+    document.getElementById("progressBar").style.width = calc(progress) + "%";
+    document.getElementById("resolvedBar").style.width = calc(resolved) + "%";
+    document.getElementById("closedBar").style.width = calc(closed) + "%";
+
+    document.getElementById("highBar").style.width = calc(high) + "%";
+    document.getElementById("mediumBar").style.width = calc(medium) + "%";
+    document.getElementById("lowBar").style.width = calc(low) + "%";
 }
 
 // ================================
