@@ -15,7 +15,7 @@ if (!token || token === "undefined" || token === "null") {
 }
 
 // ================================
-// 📡 FETCH INCIDENTS
+// 📡 FETCH DATA
 // ================================
 async function loadDashboard() {
     try {
@@ -29,8 +29,7 @@ async function loadDashboard() {
         });
 
         if (response.status === 401 || response.status === 403) {
-            localStorage.removeItem("token");
-            window.location.href = "/pages/login.html";
+            logout();
             return;
         }
 
@@ -42,31 +41,31 @@ async function loadDashboard() {
 
         console.log("✅ API Response:", data);
 
-        const incidents = Array.isArray(data)
-            ? data
-            : (Array.isArray(data?.content) ? data.content : []);
-
-        // 🔥 ALL UPDATES
-        updateDashboard(incidents);
-        renderRecentIncidents(incidents);
-        updateCharts(incidents);
+        updateDashboard(data);
+        renderRecentIncidents(data);
 
     } catch (error) {
         console.error("❌ Dashboard error:", error);
-
-        document.body.innerHTML += `
-            <p style="color:red;text-align:center;">
-                Failed to load dashboard
-            </p>
-        `;
     }
 }
 
 // ================================
-// 🧮 UPDATE CARDS
+// 📊 DASHBOARD CARDS
 // ================================
-function updateDashboard(incidents) {
+function updateDashboard(data) {
 
+    const incidents = Array.isArray(data)
+        ? data
+        : (Array.isArray(data?.content) ? data.content : []);
+
+    if (!Array.isArray(incidents)) {
+        console.error("❌ Invalid data format");
+        return;
+    }
+
+    // ============================
+    // BASIC COUNTS
+    // ============================
     const total = incidents.length;
 
     const open = incidents.filter(i =>
@@ -85,31 +84,100 @@ function updateDashboard(incidents) {
         i.status?.toUpperCase() === "CLOSED"
     ).length;
 
+    // ============================
+    // 🔥 TIME-BASED SLA (FINAL)
+    // ============================
+    let sla = 0;
+    let resolvedToday = 0;
+    let openedToday = 0;
+
+    const now = new Date();
+    const today = now.toISOString().split("T")[0];
+
+    incidents.forEach(i => {
+
+        const status = i.status?.toUpperCase();
+        const priority = i.priority?.toUpperCase();
+
+        // ============================
+        // SLA LOGIC
+        // ============================
+        if (!i.createdAt) return;
+
+        // Only active incidents
+        if (status !== "OPEN" && status !== "IN_PROGRESS") return;
+
+        const createdTime = new Date(i.createdAt);
+        const diffHours = (now - createdTime) / (1000 * 60 * 60);
+
+        let limit = 0;
+
+        if (priority === "HIGH") limit = 2;
+        else if (priority === "MEDIUM") limit = 6;
+        else if (priority === "LOW") limit = 12;
+
+        if (diffHours > limit) {
+            sla++;
+        }
+
+        // ============================
+        // OPENED TODAY
+        // ============================
+        if (i.createdAt && i.createdAt.startsWith(today)) {
+            openedToday++;
+        }
+
+        // ============================
+        // RESOLVED TODAY
+        // ============================
+        if (
+            i.updatedAt &&
+            i.updatedAt.startsWith(today) &&
+            status === "RESOLVED"
+        ) {
+            resolvedToday++;
+        }
+
+    });
+
+    console.log("🔥 FINAL SLA:", sla);
+
+    // ============================
+    // UPDATE UI
+    // ============================
     document.getElementById("totalCount").innerText = total;
     document.getElementById("openCount").innerText = open;
     document.getElementById("inProgressCount").innerText = inProgress;
     document.getElementById("resolvedCount").innerText = resolved;
     document.getElementById("closedCount").innerText = closed;
+
+    document.getElementById("slaCount").innerText = sla;
+    document.getElementById("resolvedToday").innerText = resolvedToday;
+    document.getElementById("openedToday").innerText = openedToday;
 }
 
 // ================================
 // 📋 RECENT INCIDENTS
 // ================================
-function renderRecentIncidents(incidents) {
+function renderRecentIncidents(data) {
 
     const table = document.getElementById("recentIncidents");
 
-    table.innerHTML = "";
+    const incidents = Array.isArray(data)
+        ? data
+        : (Array.isArray(data?.content) ? data.content : []);
+
+    if (!Array.isArray(incidents)) return;
 
     const sorted = [...incidents].sort((a, b) => b.id - a.id);
     const recent = sorted.slice(0, 5);
 
+    table.innerHTML = "";
+
     if (recent.length === 0) {
         table.innerHTML = `
             <tr>
-                <td colspan="4" class="empty">
-                    No recent incidents
-                </td>
+                <td colspan="4">No recent incidents</td>
             </tr>
         `;
         return;
@@ -119,19 +187,16 @@ function renderRecentIncidents(incidents) {
         table.innerHTML += `
             <tr>
                 <td>${i.title || "-"}</td>
-
                 <td>
                     <span class="priority ${i.priority}">
-                        ${i.priority || "-"}
+                        ${i.priority}
                     </span>
                 </td>
-
                 <td>
                     <span class="status ${i.status}">
-                        ${i.status || "-"}
+                        ${i.status}
                     </span>
                 </td>
-
                 <td>${i.assignedTo || "N/A"}</td>
             </tr>
         `;
@@ -139,49 +204,18 @@ function renderRecentIncidents(incidents) {
 }
 
 // ================================
-// 📊 CHARTS (THIS WAS MISSING)
-// ================================
-function updateCharts(incidents) {
-
-    const total = incidents.length;
-
-    const open = incidents.filter(i => i.status === "OPEN").length;
-    const progress = incidents.filter(i => i.status === "IN_PROGRESS").length;
-    const resolved = incidents.filter(i => i.status === "RESOLVED").length;
-    const closed = incidents.filter(i => i.status === "CLOSED").length;
-
-    const high = incidents.filter(i => i.priority === "HIGH").length;
-    const medium = incidents.filter(i => i.priority === "MEDIUM").length;
-    const low = incidents.filter(i => i.priority === "LOW").length;
-
-    // 🔢 COUNTS
-    document.getElementById("openBarCount").innerText = open;
-    document.getElementById("progressBarCount").innerText = progress;
-    document.getElementById("resolvedBarCount").innerText = resolved;
-    document.getElementById("closedBarCount").innerText = closed;
-
-    document.getElementById("highCount").innerText = high;
-    document.getElementById("mediumCount").innerText = medium;
-    document.getElementById("lowCount").innerText = low;
-
-    // 📏 WIDTH %
-    const calc = (val) => total === 0 ? 0 : (val / total) * 100;
-
-    document.getElementById("openBar").style.width = calc(open) + "%";
-    document.getElementById("progressBar").style.width = calc(progress) + "%";
-    document.getElementById("resolvedBar").style.width = calc(resolved) + "%";
-    document.getElementById("closedBar").style.width = calc(closed) + "%";
-
-    document.getElementById("highBar").style.width = calc(high) + "%";
-    document.getElementById("mediumBar").style.width = calc(medium) + "%";
-    document.getElementById("lowBar").style.width = calc(low) + "%";
-}
-
-// ================================
 // 🔁 NAVIGATION
 // ================================
 function goToIncidents() {
     window.location.href = "/pages/incidents.html";
+}
+
+// ================================
+// 🚪 LOGOUT
+// ================================
+function logout() {
+    localStorage.removeItem("token");
+    window.location.href = "/pages/login.html";
 }
 
 // ================================
