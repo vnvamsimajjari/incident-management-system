@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Dashboard - IMS</title>
+
+    <style>
+        body {
+            font-family: Arial;
+            background: #f4f6f8;
+            padding: 20px;
+        }
+
+        h2 {
+            text-align: center;
+        }
+
+        .card-container {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-top: 30px;
+        }
+
+        .card {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            width: 200px;
+            text-align: center;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+
+        .card h3 {
+            margin-bottom: 10px;
+        }
+
+        .card span {
+            font-size: 24px;
+            font-weight: bold;
+        }
+
+        .btn {
+            display: block;
+            margin: 40px auto;
+            padding: 10px 20px;
+            background: #185FA5;
+            color: white;
+            border: none;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+
+<body>
+
+<h2>Dashboard</h2>
+
+<div class="card-container">
+    <div class="card">
+        <h3>Total</h3>
+        <span id="totalCount">0</span>
+    </div>
+
+    <div class="card">
+        <h3>Open</h3>
+        <span id="openCount">0</span>
+    </div>
+
+    <div class="card">
+        <h3>Resolved</h3>
+        <span id="resolvedCount">0</span>
+    </div>
+</div>
+
+<button class="btn" onclick="goToIncidents()">View Incidents</button>
+
+<!-- ✅ CORRECT PATH -->
+<script src="/js/dashboard.js"></script>
+
+</body>
+</html>

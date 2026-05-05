@@ -75,24 +75,45 @@
 
 <script>
     document.getElementById("loginForm").addEventListener("submit", async function (e) {
-    e.preventDefault();
+     e.preventDefault();
 
-    console.log("Login clicked"); // debug
+     console.log("Login clicked");
 
-    const username = document.getElementById("username").value;
-    const password = document.getElementById("password").value;
+     const username = document.getElementById("username").value;
+     const password = document.getElementById("password").value;
 
-    try {
-        const data = await loginUser(username, password);
+     try {
+         const data = await loginUser(username, password);
 
-        console.log("Response:", data);
+         console.log("Response:", data);
 
-        window.location.href = "index.html";
+         localStorage.setItem("token", data.token);
 
-    } catch (error) {
-        document.getElementById("error").innerText = "Login failed";
-    }
-});
+         window.location.href = "dashboard.html";
+
+     } catch (error) {
+         document.getElementById("error").innerText = "Login failed";
+     }
+ });
+
+ async function loginUser(username, password) {
+     const response = await fetch("http://localhost:8080/api/auth/login", {
+         method: "POST",
+         headers: {
+             "Content-Type": "application/json"
+         },
+         body: JSON.stringify({
+             username: username,
+             password: password
+         })
+     });
+
+     if (!response.ok) {
+         throw new Error("Login failed");
+     }
+
+     return response.json();
+ }
 </script>
 
 </body>

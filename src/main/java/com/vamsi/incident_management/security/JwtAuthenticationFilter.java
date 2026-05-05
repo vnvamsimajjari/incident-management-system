@@ -24,8 +24,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     // ✅ BEST PRACTICE: skip filter for static resources
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
-        String path = request.getRequestURI();
-
+        //String path = request.getRequestURI();
+          String path = request.getServletPath();
         return path.startsWith("/js/") ||
                 path.startsWith("/css/") ||
                 path.startsWith("/pages/") ||

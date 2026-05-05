@@ -2,44 +2,97 @@
 <html>
 <head>
     <title>Create Incident</title>
+
+    <!-- ✅ Correct CSS path -->
+    <link rel="stylesheet" href="../css/main.css">
+
+    <style>
+        body {
+            font-family: Arial;
+            background: #f4f6f8;
+            padding: 20px;
+        }
+
+        h2 {
+            text-align: center;
+        }
+
+        .form-box {
+            width: 400px;
+            margin: auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+
+        input, select, textarea {
+            width: 100%;
+            padding: 8px;
+            margin: 8px 0;
+        }
+
+        button {
+            width: 100%;
+            padding: 10px;
+            background: #185FA5;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background: #0C447C;
+        }
+
+        .back-link {
+            display: block;
+            text-align: center;
+            margin-top: 10px;
+        }
+    </style>
 </head>
 
 <body>
 
 <h2>Create Incident</h2>
 
-<form id="incidentForm">
+<div class="form-box">
 
-    <label>Title:</label><br>
-    <input type="text" id="title" required><br><br>
+    <form id="incidentForm">
 
-    <label>Description:</label><br>
-    <textarea id="description"></textarea><br><br>
+        <label>Title:</label>
+        <input type="text" id="title" required>
 
-    <label>Priority:</label><br>
-    <select id="priority">
-        <option value="LOW">LOW</option>
-        <option value="MEDIUM">MEDIUM</option>
-        <option value="HIGH">HIGH</option>
-    </select><br><br>
+        <label>Description:</label>
+        <textarea id="description"></textarea>
 
-    <label>Assign To:</label><br>
-    <select id="assignedTo">
-        <option value="admin">admin</option>
-        <option value="engineer">engineer</option>
-    </select><br><br>
+        <label>Priority:</label>
+        <select id="priority">
+            <option value="LOW">LOW</option>
+            <option value="MEDIUM">MEDIUM</option>
+            <option value="HIGH">HIGH</option>
+        </select>
 
-    <label>SLA Minutes:</label><br>
-    <input type="number" id="slaMinutes" value="60"><br><br>
+        <label>Assign To:</label>
+        <select id="assignedTo">
+            <option value="admin">admin</option>
+            <option value="engineer">engineer</option>
+        </select>
 
-    <button type="submit">Create</button>
+        <label>SLA Minutes:</label>
+        <input type="number" id="slaMinutes" value="60">
 
-</form>
+        <button type="submit">Create</button>
 
-<br>
-<a href="incidents.html">Back to Incidents</a>
+    </form>
 
-<script src="../assets/js/create-incident.js"></script>
+    <a class="back-link" href="incidents.html">Back to Incidents</a>
+
+</div>
+
+<!-- ✅ Correct JS path -->
+<script src="../js/create-incident.js"></script>
 
 </body>
 </html>
