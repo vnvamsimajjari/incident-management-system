@@ -458,12 +458,12 @@ if (fileUpload) {
 }
 
 // ======================================
-// 📋 SCREENSHOT PASTE
+// 📸 SCREENSHOT PASTE
 // ======================================
 
 document.addEventListener(
     "paste",
-    async (event) => {
+    function (event) {
 
         const items =
             event.clipboardData.items;
@@ -471,26 +471,83 @@ document.addEventListener(
         for (const item of items) {
 
             if (
-                item.type.indexOf("image")
-                !== -1
+                item.type.indexOf(
+                    "image"
+                ) !== -1
             ) {
 
-                const blob =
+                const file =
                     item.getAsFile();
 
-                console.log(
-                    "📸 Screenshot pasted:",
-                    blob
-                );
+                const reader =
+                    new FileReader();
 
-                alert(
-                    "Screenshot pasted successfully"
-                );
+                reader.onload =
+                    function (e) {
+
+                    const container =
+                        document.getElementById(
+                            "attachmentContainer"
+                        );
+
+                    if (!container) return;
+
+                    const div =
+                        document.createElement(
+                            "div"
+                        );
+
+                    div.className =
+                        "attachment";
+
+                    div.innerHTML = `
+
+                        <div>
+
+                            <div class="
+                                attachment-name
+                            ">
+                                pasted-image.png
+                            </div>
+
+                            <div class="
+                                attachment-size
+                            ">
+                                Screenshot
+                            </div>
+
+                            <img
+                                src="${e.target.result}"
+                                style="
+                                    width:120px;
+                                    margin-top:10px;
+                                    border-radius:8px;
+                                    border:1px solid #333;
+                                "
+                            >
+
+                        </div>
+
+                        <button class="
+                            btn btn-dark
+                        ">
+                            Uploaded
+                        </button>
+
+                    `;
+
+                    container.prepend(div);
+
+                    console.log(
+                        "✅ Screenshot Added"
+                    );
+                };
+
+                reader.readAsDataURL(file);
             }
         }
     }
 );
-
 // ======================================
 // 📎 HANDLE FILES
 // ======================================
@@ -500,13 +557,54 @@ function handleFiles(event) {
     const files =
         event.target.files;
 
-    console.log(
-        "📂 Files uploaded:",
-        files
-    );
+    const container =
+        document.getElementById(
+            "attachmentContainer"
+        );
 
-    alert(
-        `${files.length} file(s) selected`
+    if (!container) return;
+
+    for (const file of files) {
+
+        const div =
+            document.createElement("div");
+
+        div.className =
+            "attachment";
+
+        div.innerHTML = `
+
+            <div>
+
+                <div class="
+                    attachment-name
+                ">
+                    ${file.name}
+                </div>
+
+                <div class="
+                    attachment-size
+                ">
+                    ${Math.round(
+                        file.size / 1024
+                    )} KB
+                </div>
+
+            </div>
+
+            <button class="
+                btn btn-dark
+            ">
+                Uploaded
+            </button>
+
+        `;
+
+        container.prepend(div);
+    }
+
+    console.log(
+        "✅ Files Rendered"
     );
 }
 
@@ -613,6 +711,85 @@ function logout() {
         "/pages/login.html";
 }
 
+// ======================================
+// 💬 COMMENT SYSTEM
+// ======================================
+
+const commentBtn =
+    document.getElementById(
+        "postCommentBtn"
+    );
+
+if (commentBtn) {
+
+    commentBtn.addEventListener(
+        "click",
+        postComment
+    );
+}
+
+function postComment() {
+
+    const textarea =
+        document.getElementById(
+            "commentInput"
+        );
+
+    if (!textarea) return;
+
+    const text =
+        textarea.value.trim();
+
+    if (!text) {
+
+        alert(
+            "Enter comment first"
+        );
+
+        return;
+    }
+
+    const timeline =
+        document.getElementById(
+            "timeline"
+        );
+
+    if (!timeline) return;
+
+    const div =
+        document.createElement("div");
+
+    div.className =
+        "timeline-item";
+
+    div.innerHTML = `
+
+        <div class="timeline-dot"></div>
+
+        <div class="timeline-content">
+
+            <div class="timeline-title">
+                Comment added:
+                ${text}
+            </div>
+
+            <div class="timeline-time">
+                ${new Date()
+                    .toLocaleString()}
+            </div>
+
+        </div>
+
+    `;
+
+    timeline.prepend(div);
+
+    textarea.value = "";
+
+    console.log(
+        "✅ Comment Added"
+    );
+}
 // ======================================
 // 🚀 INIT
 // ======================================
