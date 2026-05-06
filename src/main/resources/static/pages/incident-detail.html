@@ -1,0 +1,1131 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+
+    <title>Incident Detail - IncidentIQ</title>
+
+    <link rel="icon" href="data:,">
+
+    <style>
+
+        /* =========================================
+           RESET
+        ========================================== */
+
+        *{
+            margin:0;
+            padding:0;
+            box-sizing:border-box;
+        }
+
+        :root{
+
+            --bg:#15181d;
+            --sidebar:#1b1f24;
+            --card:#20252d;
+            --border:#2c3440;
+
+            --text:#f3f4f6;
+            --muted:#94a3b8;
+            --soft:#64748b;
+
+            --blue:#3b82f6;
+            --green:#22c55e;
+            --yellow:#f59e0b;
+            --red:#ef4444;
+
+            --shadow:
+            0 0 0 1px rgba(255,255,255,0.02),
+            0 14px 30px rgba(0,0,0,0.28);
+
+        }
+
+        body{
+
+            font-family:
+            Inter,
+            system-ui,
+            sans-serif;
+
+            background:var(--bg);
+
+            color:var(--text);
+
+            font-size:14px;
+        }
+
+        .layout{
+            display:flex;
+            min-height:100vh;
+        }
+
+        /* =========================================
+           SIDEBAR
+        ========================================== */
+
+        .sidebar{
+
+            width:220px;
+
+            background:var(--sidebar);
+
+            border-right:
+            1px solid var(--border);
+
+            position:fixed;
+
+            left:0;
+            top:0;
+
+            height:100vh;
+
+            display:flex;
+            flex-direction:column;
+        }
+
+        .logo{
+
+            padding:22px 18px;
+
+            border-bottom:
+            1px solid var(--border);
+        }
+
+        .logo-title{
+            font-size:20px;
+            font-weight:700;
+        }
+
+        .logo-sub{
+            margin-top:4px;
+            color:var(--soft);
+            font-size:11px;
+        }
+
+        .nav{
+            flex:1;
+            padding:12px 0;
+        }
+
+        .nav-section{
+
+            padding:
+            16px 18px 8px;
+
+            font-size:10px;
+
+            text-transform:uppercase;
+
+            letter-spacing:1px;
+
+            color:#4b5563;
+        }
+
+        .nav-item{
+
+            display:flex;
+            align-items:center;
+
+            margin:4px 10px;
+
+            padding:11px 14px;
+
+            border-radius:10px;
+
+            text-decoration:none;
+
+            color:var(--muted);
+
+            transition:0.2s;
+        }
+
+        .nav-item:hover{
+
+            background:
+            rgba(255,255,255,0.03);
+
+            color:white;
+        }
+
+        .nav-item.active{
+
+            background:
+            rgba(255,255,255,0.05);
+
+            color:white;
+        }
+
+        .sidebar-footer{
+
+            padding:16px;
+
+            border-top:
+            1px solid var(--border);
+        }
+
+        .user{
+            display:flex;
+            gap:10px;
+            align-items:center;
+        }
+
+        .avatar{
+
+            width:34px;
+            height:34px;
+
+            border-radius:50%;
+
+            background:var(--blue);
+
+            display:flex;
+            align-items:center;
+            justify-content:center;
+
+            font-size:12px;
+            font-weight:700;
+        }
+
+        .user-role{
+            color:var(--soft);
+            font-size:11px;
+        }
+
+        /* =========================================
+           MAIN
+        ========================================== */
+
+        .main{
+            flex:1;
+            margin-left:220px;
+        }
+
+        /* =========================================
+           TOPBAR
+        ========================================== */
+
+        .topbar{
+
+            height:64px;
+
+            background:var(--sidebar);
+
+            border-bottom:
+            1px solid var(--border);
+
+            display:flex;
+            align-items:center;
+            justify-content:space-between;
+
+            padding:0 24px;
+        }
+
+        .topbar-title{
+            font-size:16px;
+            font-weight:600;
+        }
+
+        .topbar-right{
+            display:flex;
+            gap:10px;
+        }
+
+        /* =========================================
+           BUTTONS
+        ========================================== */
+
+        .btn{
+
+            border:none;
+
+            padding:9px 14px;
+
+            border-radius:8px;
+
+            cursor:pointer;
+
+            font-size:12px;
+            font-weight:600;
+
+            transition:0.2s;
+        }
+
+        .btn-blue{
+            background:var(--blue);
+            color:white;
+        }
+
+        .btn-blue:hover{
+            opacity:0.9;
+        }
+
+        .btn-dark{
+
+            background:
+            rgba(255,255,255,0.04);
+
+            border:
+            1px solid var(--border);
+
+            color:white;
+        }
+
+        .btn-dark:hover{
+            background:
+            rgba(255,255,255,0.08);
+        }
+
+        /* =========================================
+           CONTENT
+        ========================================== */
+
+        .content{
+            padding:24px;
+        }
+
+        .grid{
+
+            display:grid;
+
+            grid-template-columns:
+            2fr 1fr;
+
+            gap:18px;
+        }
+
+        .panel{
+
+            background:var(--card);
+
+            border:
+            1px solid var(--border);
+
+            border-radius:14px;
+
+            padding:20px;
+
+            box-shadow:var(--shadow);
+
+            margin-bottom:18px;
+        }
+
+        .panel-title{
+
+            font-size:16px;
+            font-weight:600;
+
+            margin-bottom:18px;
+        }
+
+        /* =========================================
+           INCIDENT HEADER
+        ========================================== */
+
+        .incident-top{
+
+            display:flex;
+            justify-content:space-between;
+            align-items:flex-start;
+
+            margin-bottom:18px;
+        }
+
+        .incident-title{
+            font-size:26px;
+            font-weight:700;
+        }
+
+        .incident-id{
+            margin-top:4px;
+            color:var(--soft);
+        }
+
+        .incident-description{
+
+            color:#cbd5e1;
+
+            line-height:1.8;
+
+            margin-top:14px;
+        }
+
+        /* =========================================
+           BADGES
+        ========================================== */
+
+        .badge{
+
+            display:inline-flex;
+            align-items:center;
+
+            padding:6px 12px;
+
+            border-radius:20px;
+
+            font-size:12px;
+            font-weight:600;
+
+            margin-left:8px;
+        }
+
+        .OPEN{
+            background:rgba(59,130,246,0.15);
+            color:#60a5fa;
+        }
+
+        .IN_PROGRESS{
+            background:rgba(245,158,11,0.15);
+            color:#f59e0b;
+        }
+
+        .RESOLVED{
+            background:rgba(34,197,94,0.15);
+            color:#22c55e;
+        }
+
+        .HIGH{
+            background:rgba(239,68,68,0.15);
+            color:#ef4444;
+        }
+
+        .LOW{
+            background:rgba(34,197,94,0.15);
+            color:#22c55e;
+        }
+
+        /* =========================================
+           INFO GRID
+        ========================================== */
+
+        .info-grid{
+
+            display:grid;
+
+            grid-template-columns:
+            repeat(2,1fr);
+
+            gap:16px;
+
+            margin-top:24px;
+        }
+
+        .info-card{
+
+            background:
+            rgba(255,255,255,0.02);
+
+            border:
+            1px solid var(--border);
+
+            border-radius:12px;
+
+            padding:18px;
+        }
+
+        .info-label{
+
+            font-size:11px;
+
+            text-transform:uppercase;
+
+            color:var(--soft);
+
+            margin-bottom:8px;
+        }
+
+        .info-value{
+            font-size:14px;
+            font-weight:600;
+        }
+
+        /* =========================================
+           TIMELINE
+        ========================================== */
+
+        .timeline{
+            margin-top:8px;
+        }
+
+        .timeline-item{
+
+            display:flex;
+            gap:14px;
+
+            margin-bottom:22px;
+        }
+
+        .timeline-dot{
+
+            width:10px;
+            height:10px;
+
+            border-radius:50%;
+
+            background:var(--blue);
+
+            margin-top:6px;
+        }
+
+        .timeline-content{
+            flex:1;
+        }
+
+        .timeline-title{
+            font-weight:600;
+            margin-bottom:5px;
+        }
+
+        .timeline-time{
+            color:var(--soft);
+            font-size:12px;
+        }
+
+        /* =========================================
+           COMMENTS
+        ========================================== */
+
+        .comment-box{
+            margin-top:12px;
+        }
+
+        textarea{
+
+            width:100%;
+            min-height:110px;
+
+            background:#15191f;
+
+            border:
+            1px solid var(--border);
+
+            color:white;
+
+            padding:16px;
+
+            border-radius:12px;
+
+            resize:none;
+
+            outline:none;
+        }
+
+        .comment-actions{
+
+            display:flex;
+            justify-content:flex-end;
+
+            margin-top:14px;
+        }
+
+        /* =========================================
+           ATTACHMENTS
+        ========================================== */
+
+        .upload-box{
+
+            border:
+            2px dashed #384250;
+
+            border-radius:14px;
+
+            padding:26px;
+
+            text-align:center;
+
+            margin-bottom:18px;
+
+            background:
+            rgba(255,255,255,0.02);
+        }
+
+        .upload-box input{
+            display:none;
+        }
+
+        .upload-label{
+
+            display:inline-block;
+
+            padding:10px 18px;
+
+            border-radius:8px;
+
+            background:var(--blue);
+
+            color:white;
+
+            cursor:pointer;
+
+            font-size:13px;
+            font-weight:600;
+        }
+
+        .paste-note{
+
+            margin-top:10px;
+
+            font-size:12px;
+
+            color:var(--soft);
+        }
+
+        .attachment{
+
+            display:flex;
+            justify-content:space-between;
+            align-items:center;
+
+            padding:14px;
+
+            border:
+            1px solid var(--border);
+
+            border-radius:10px;
+
+            margin-bottom:12px;
+
+            background:
+            rgba(255,255,255,0.02);
+        }
+
+        .attachment-name{
+            font-size:13px;
+            font-weight:500;
+        }
+
+        .attachment-size{
+            color:var(--soft);
+            font-size:11px;
+            margin-top:4px;
+        }
+
+        /* =========================================
+           SLA PANEL
+        ========================================== */
+
+        .sla-item{
+
+            display:flex;
+            justify-content:space-between;
+
+            padding:15px 0;
+
+            border-bottom:
+            1px solid var(--border);
+        }
+
+        .sla-item:last-child{
+            border-bottom:none;
+        }
+
+        .sla-label{
+            color:var(--muted);
+        }
+
+        .sla-value{
+            font-weight:600;
+        }
+
+        .danger{
+            color:var(--red);
+        }
+
+        .success{
+            color:var(--green);
+        }
+
+        /* =========================================
+           RESPONSIVE
+        ========================================== */
+
+        @media(max-width:1100px){
+
+            .grid{
+                grid-template-columns:1fr;
+            }
+
+            .sidebar{
+                display:none;
+            }
+
+            .main{
+                margin-left:0;
+            }
+
+            .info-grid{
+                grid-template-columns:1fr;
+            }
+        }
+
+    </style>
+
+</head>
+
+<body>
+
+<div class="layout">
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+
+        <div class="logo">
+
+            <div class="logo-title">
+                IncidentIQ
+            </div>
+
+            <div class="logo-sub">
+                Management System
+            </div>
+
+        </div>
+
+        <nav class="nav">
+
+            <a href="/pages/dashboard.html"
+               class="nav-item">
+                Dashboard
+            </a>
+
+            <div class="nav-section">
+                Incidents
+            </div>
+
+            <a href="/pages/incidents.html"
+               class="nav-item active">
+                All Incidents
+            </a>
+
+            <a href="/pages/create-incident.html"
+               class="nav-item">
+                Create Incident
+            </a>
+
+        </nav>
+
+        <div class="sidebar-footer">
+
+            <div class="user">
+
+                <div class="avatar">
+                    IS
+                </div>
+
+                <div>
+
+                    <div>
+                        Isma
+                    </div>
+
+                    <div class="user-role">
+                        ADMIN
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </aside>
+
+    <!-- MAIN -->
+    <main class="main">
+
+        <!-- TOPBAR -->
+        <div class="topbar">
+
+            <div class="topbar-title">
+                Incident Detail
+            </div>
+
+            <div class="topbar-right">
+
+                <button class="btn btn-dark"
+                        id="incidentCode">
+                    #INC-42
+                </button>
+
+                <button class="btn btn-blue">
+                    Resolve
+                </button>
+
+            </div>
+
+        </div>
+
+        <!-- CONTENT -->
+        <div class="content">
+
+            <div class="grid">
+
+                <!-- LEFT -->
+                <div>
+
+                    <!-- INCIDENT -->
+                    <div class="panel">
+
+                        <div class="incident-top">
+
+                            <div>
+
+                                <div class="incident-title"
+                                     id="incidentTitle">
+                                    DB Server Down
+                                </div>
+
+                                <div class="incident-id"
+                                     id="incidentSubId">
+                                    #INC-42
+                                </div>
+
+                            </div>
+
+                            <div>
+
+                                <span class="badge HIGH"
+                                      id="priorityBadge">
+                                    HIGH
+                                </span>
+
+                                <span class="badge IN_PROGRESS"
+                                      id="statusBadge">
+                                    IN PROGRESS
+                                </span>
+
+                            </div>
+
+                        </div>
+
+                        <div class="incident-description"
+                             id="incidentDescription">
+
+                            Production database server
+                            became unresponsive causing
+                            downtime for payment services.
+
+                        </div>
+
+                        <!-- INFO -->
+                        <div class="info-grid">
+
+                            <div class="info-card">
+
+                                <div class="info-label">
+                                    Assigned To
+                                </div>
+
+                                <div class="info-value"
+                                     id="assignedTo">
+                                    engineer
+                                </div>
+
+                            </div>
+
+                            <div class="info-card">
+
+                                <div class="info-label">
+                                    Created At
+                                </div>
+
+                                <div class="info-value"
+                                     id="createdAt">
+                                    Apr 15, 2026
+                                </div>
+
+                            </div>
+
+                            <div class="info-card">
+
+                                <div class="info-label">
+                                    SLA Due
+                                </div>
+
+                                <div class="info-value danger"
+                                     id="slaDue">
+                                    Apr 15, 2026
+                                </div>
+
+                            </div>
+
+                            <div class="info-card">
+
+                                <div class="info-label">
+                                    Queue
+                                </div>
+
+                                <div class="info-value">
+                                    Standard Queue
+                                </div>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                    <!-- TIMELINE -->
+                    <div class="panel">
+
+                        <div class="panel-title">
+                            Latest Updates
+                        </div>
+
+                        <div class="timeline"
+                             id="timeline">
+
+                            <div class="timeline-item">
+
+                                <div class="timeline-dot"></div>
+
+                                <div class="timeline-content">
+
+                                    <div class="timeline-title">
+                                        Incident created
+                                    </div>
+
+                                    <div class="timeline-time">
+                                        Apr 15 • 14:32
+                                    </div>
+
+                                </div>
+
+                            </div>
+
+                            <div class="timeline-item">
+
+                                <div class="timeline-dot"></div>
+
+                                <div class="timeline-content">
+
+                                    <div class="timeline-title">
+                                        Assigned to engineer
+                                    </div>
+
+                                    <div class="timeline-time">
+                                        Apr 15 • 14:40
+                                    </div>
+
+                                </div>
+
+                            </div>
+
+                            <div class="timeline-item">
+
+                                <div class="timeline-dot"></div>
+
+                                <div class="timeline-content">
+
+                                    <div class="timeline-title">
+                                        Added to Standard Queue
+                                    </div>
+
+                                    <div class="timeline-time">
+                                        Apr 15 • 15:10
+                                    </div>
+
+                                </div>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                    <!-- COMMENTS -->
+                    <div class="panel">
+
+                        <div class="panel-title">
+                            Comments
+                        </div>
+
+                        <div class="comment-box">
+
+                            <textarea
+                                    placeholder="
+Add update comment...
+"></textarea>
+
+                            <div class="comment-actions">
+
+                                <button
+                                        class="btn btn-blue">
+
+                                    Post Comment
+
+                                </button>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+                <!-- RIGHT -->
+                <div>
+
+                    <!-- ATTACHMENTS -->
+                    <div class="panel">
+
+                        <div class="panel-title">
+                            Attachments
+                        </div>
+
+                        <div class="upload-box"
+                             id="pasteArea">
+
+                            <label
+                                    for="fileUpload"
+                                    class="upload-label">
+
+                                Upload Files
+
+                            </label>
+
+                            <input
+                                    type="file"
+                                    id="fileUpload"
+                                    multiple>
+
+                            <div class="paste-note">
+
+                                Paste screenshot using:
+                                Ctrl + V
+
+                            </div>
+
+                        </div>
+
+                        <!-- FILE -->
+                        <div class="attachment">
+
+                            <div>
+
+                                <div class="attachment-name">
+                                    db-error-log.txt
+                                </div>
+
+                                <div class="attachment-size">
+                                    124 KB
+                                </div>
+
+                            </div>
+
+                            <button
+                                    class="btn btn-dark">
+
+                                Download
+
+                            </button>
+
+                        </div>
+
+                        <!-- FILE -->
+                        <div class="attachment">
+
+                            <div>
+
+                                <div class="attachment-name">
+                                    screenshot.png
+                                </div>
+
+                                <div class="attachment-size">
+                                    842 KB
+                                </div>
+
+                            </div>
+
+                            <button
+                                    class="btn btn-dark">
+
+                                Download
+
+                            </button>
+
+                        </div>
+
+                    </div>
+
+                    <!-- SLA -->
+                    <div class="panel">
+
+                        <div class="panel-title">
+                            SLA Status
+                        </div>
+
+                        <div class="sla-item">
+
+                            <div class="sla-label">
+                                SLA Target
+                            </div>
+
+                            <div class="sla-value"
+                                 id="slaTarget">
+                                4 Hours
+                            </div>
+
+                        </div>
+
+                        <div class="sla-item">
+
+                            <div class="sla-label">
+                                Time Elapsed
+                            </div>
+
+                            <div class="sla-value danger"
+                                 id="timeElapsed">
+                                6h 18m
+                            </div>
+
+                        </div>
+
+                        <div class="sla-item">
+
+                            <div class="sla-label">
+                                Breach Status
+                            </div>
+
+                            <div class="sla-value danger"
+                                 id="breachStatus">
+                                Breached
+                            </div>
+
+                        </div>
+
+                        <div class="sla-item">
+
+                            <div class="sla-label">
+                                Resolution ETA
+                            </div>
+
+                            <div class="sla-value success"
+                                 id="eta">
+                                20 mins
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </main>
+
+</div>
+
+<script src="/js/incident-detail.js"></script>
+
+</body>
+</html>
