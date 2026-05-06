@@ -1,183 +1,649 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Dashboard - IMS</title>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+
+    <title>Dashboard - IncidentIQ</title>
+
     <link rel="icon" href="data:,">
 
     <style>
-        body {
-            margin: 0;
-            font-family: Inter, Arial;
-            background: linear-gradient(180deg, #0f172a, #020617);
-            color: #e5e7eb;
+
+        /* =========================================
+           RESET
+        ========================================== */
+
+        *{
+            margin:0;
+            padding:0;
+            box-sizing:border-box;
         }
 
-        .container {
-            display: flex;
+        :root{
+
+            --bg:#16181d;
+            --sidebar:#1b1f24;
+            --card:#20252d;
+            --border:#2d3642;
+
+            --text:#f1f5f9;
+            --muted:#94a3b8;
+            --soft:#64748b;
+
+            --blue:#3b82f6;
+            --green:#22c55e;
+            --yellow:#f59e0b;
+            --red:#ef4444;
+            --grey:#94a3b8;
+
+            --shadow:
+            0 0 0 1px rgba(255,255,255,0.02),
+            0 12px 28px rgba(0,0,0,0.28);
+
         }
 
-        /* SIDEBAR */
-        .sidebar {
-            width: 240px;
-            background: #020617;
-            height: 100vh;
-            padding: 20px;
-            border-right: 1px solid #1f2937;
+        body{
+            font-family:
+            Inter,
+            system-ui,
+            sans-serif;
+
+            background:var(--bg);
+            color:var(--text);
+            font-size:14px;
         }
 
-        .sidebar h2 {
-            font-size: 18px;
-            margin-bottom: 25px;
+        .layout{
+            display:flex;
+            min-height:100vh;
         }
 
-        .sidebar a {
-            display: block;
-            padding: 10px;
-            color: #94a3b8;
-            border-radius: 6px;
-            margin-bottom: 8px;
-            text-decoration: none;
+        /* =========================================
+           SIDEBAR
+        ========================================== */
+
+        .sidebar{
+
+            width:220px;
+            background:var(--sidebar);
+
+            border-right:
+            1px solid var(--border);
+
+            display:flex;
+            flex-direction:column;
+
+            position:fixed;
+            left:0;
+            top:0;
+
+            height:100vh;
         }
 
-        .sidebar a:hover {
-            background: #1e293b;
-            color: white;
+        .logo{
+
+            padding:22px 18px;
+
+            border-bottom:
+            1px solid var(--border);
         }
 
-        /* MAIN */
-        .main {
-            flex: 1;
-            padding: 25px;
+        .logo-title{
+
+            font-size:20px;
+            font-weight:700;
+
+            letter-spacing:0.4px;
         }
 
-        h2 {
-            margin-bottom: 20px;
+        .logo-sub{
+
+            font-size:11px;
+            color:var(--soft);
+
+            margin-top:4px;
         }
 
-        h3 {
-            margin-bottom: 15px;
-            color: #9ca3af;
+        .nav{
+
+            flex:1;
+            overflow-y:auto;
+
+            padding:12px 0;
         }
 
-        /* CARDS */
-        .card-container {
-            display: grid;
-            grid-template-columns: repeat(5, 1fr);
-            gap: 15px;
+        .nav-section{
+
+            padding:
+            16px 18px 8px;
+
+            font-size:10px;
+
+            text-transform:uppercase;
+
+            letter-spacing:1px;
+
+            color:#4b5563;
         }
 
-        .card {
-            background: rgba(17, 24, 39, 0.7);
-            backdrop-filter: blur(8px);
-            border: 1px solid #1f2937;
-            padding: 18px;
-            border-radius: 12px;
+        .nav-item{
+
+            display:flex;
+            align-items:center;
+            gap:10px;
+
+            margin:3px 10px;
+
+            padding:11px 14px;
+
+            border-radius:10px;
+
+            color:var(--muted);
+
+            text-decoration:none;
+
+            transition:0.18s;
         }
 
-        .card h4 {
-            font-size: 12px;
-            color: #9ca3af;
+        .nav-item:hover{
+
+            background:
+            rgba(255,255,255,0.03);
+
+            color:white;
         }
 
-        .card span {
-            font-size: 26px;
-            font-weight: bold;
+        .nav-item.active{
+
+            background:
+            rgba(255,255,255,0.05);
+
+            color:white;
+
+            font-weight:600;
         }
 
-        /* BUTTON */
-        .btn {
-            margin: 25px 0;
-            padding: 10px 18px;
-            background: #2563eb;
-            border: none;
-            color: white;
-            border-radius: 6px;
-            cursor: pointer;
+        .nav-badge{
+
+            margin-left:auto;
+
+            background:
+            rgba(239,68,68,0.12);
+
+            color:var(--red);
+
+            font-size:10px;
+
+            padding:2px 7px;
+
+            border-radius:30px;
         }
 
-        /* GRID LAYOUT */
-        .dashboard-grid {
-            display: grid;
-            grid-template-columns: 2fr 1fr;
-            gap: 20px;
+        .sidebar-footer{
+
+            padding:16px;
+
+            border-top:
+            1px solid var(--border);
         }
 
-        /* TABLE BOX */
-        .table-box {
-            background: #111827;
-            border: 1px solid #1f2937;
-            border-radius: 12px;
-            padding: 15px;
+        .user{
+
+            display:flex;
+            align-items:center;
+            gap:10px;
         }
 
-        table {
-            width: 100%;
-            border-collapse: collapse;
+        .avatar{
+
+            width:34px;
+            height:34px;
+
+            border-radius:50%;
+
+            background:var(--blue);
+
+            display:flex;
+            align-items:center;
+            justify-content:center;
+
+            font-size:12px;
+            font-weight:700;
         }
 
-        th {
-            font-size: 11px;
-            color: #6b7280;
-            text-transform: uppercase;
-            padding: 10px;
-            text-align: left;
+        .user-name{
+            font-size:13px;
+            font-weight:600;
         }
 
-        td {
-            padding: 10px;
-            border-bottom: 1px solid #1f2937;
+        .user-role{
+            font-size:11px;
+            color:var(--soft);
+            margin-top:2px;
         }
 
-        /* PANEL */
-        .panel {
-            background: #111827;
-            border: 1px solid #1f2937;
-            border-radius: 12px;
-            padding: 15px;
+        /* =========================================
+           MAIN
+        ========================================== */
+
+        .main{
+
+            flex:1;
+            margin-left:220px;
         }
 
-        /* BARS */
-        .bar {
-            height: 6px;
-            border-radius: 5px;
-            margin: 6px 0 12px;
-            background: #1f2937;
-            overflow: hidden;
+        /* =========================================
+           TOPBAR
+        ========================================== */
+
+        .topbar{
+
+            height:64px;
+
+            background:var(--sidebar);
+
+            border-bottom:
+            1px solid var(--border);
+
+            display:flex;
+            align-items:center;
+            justify-content:space-between;
+
+            padding:0 24px;
+
+            position:sticky;
+            top:0;
+            z-index:100;
         }
 
-        .fill {
-            height: 100%;
+        .topbar-title{
+
+            font-size:16px;
+            font-weight:600;
+
+            letter-spacing:0.3px;
         }
 
-        .open { background: #3b82f6; }
-        .progress { background: #f59e0b; }
-        .resolved { background: #22c55e; }
-        .closed { background: #9ca3af; }
+        .topbar-right{
 
-        .high { background: #f59e0b; }
-        .medium { background: #3b82f6; }
-        .low { background: #22c55e; }
-
-        /* BADGES */
-        .status, .priority {
-            padding: 4px 10px;
-            border-radius: 20px;
-            font-size: 12px;
-            font-weight: bold;
+            display:flex;
+            align-items:center;
+            gap:10px;
         }
 
-        .OPEN { background: rgba(239,68,68,0.15); color: #ef4444; }
-        .IN_PROGRESS { background: rgba(245,158,11,0.15); color: #f59e0b; }
-        .RESOLVED { background: rgba(34,197,94,0.15); color: #22c55e; }
-        .CLOSED { background: rgba(148,163,184,0.15); color: #94a3b8; }
+        .btn-outline{
 
-        .HIGH { background: rgba(239,68,68,0.15); color: #ef4444; }
-        .MEDIUM { background: rgba(59,130,246,0.15); color: #3b82f6; }
-        .LOW { background: rgba(34,197,94,0.15); color: #22c55e; }
+            border:
+            1px solid #3b4656;
 
-        .empty {
-            text-align: center;
-            color: #6b7280;
+            background:transparent;
+
+            color:var(--muted);
+
+            padding:8px 14px;
+
+            border-radius:8px;
+
+            cursor:pointer;
+
+            font-size:12px;
+
+            transition:0.18s;
+        }
+
+        .btn-outline:hover{
+
+            border-color:#556274;
+            color:white;
+        }
+
+        .btn-primary{
+
+            border:none;
+
+            background:var(--blue);
+
+            color:white;
+
+            padding:8px 15px;
+
+            border-radius:8px;
+
+            cursor:pointer;
+
+            font-size:12px;
+            font-weight:600;
+
+            transition:0.18s;
+        }
+
+        .btn-primary:hover{
+            background:#2563eb;
+        }
+
+        /* =========================================
+           CONTENT
+        ========================================== */
+
+        .content{
+            padding:24px;
+        }
+
+        /* =========================================
+           CARDS
+        ========================================== */
+
+        .cards{
+
+            display:grid;
+
+            grid-template-columns:
+            repeat(4,1fr);
+
+            gap:16px;
+
+            margin-bottom:18px;
+        }
+
+        .card{
+
+            background:var(--card);
+
+            border:
+            1px solid var(--border);
+
+            border-radius:14px;
+
+            padding:20px;
+
+            box-shadow:var(--shadow);
+        }
+
+        .card-label{
+
+            font-size:11px;
+
+            text-transform:uppercase;
+
+            letter-spacing:1px;
+
+            color:var(--soft);
+
+            margin-bottom:12px;
+        }
+
+        .card-value{
+
+            font-size:34px;
+            font-weight:700;
+        }
+
+        .card-sub{
+
+            margin-top:8px;
+
+            font-size:11px;
+            color:var(--soft);
+        }
+
+        .up{color:var(--green)}
+        .down{color:var(--red)}
+
+        /* =========================================
+           GRID
+        ========================================== */
+
+        .grid{
+
+            display:grid;
+
+            grid-template-columns:
+            2fr 1fr;
+
+            gap:18px;
+        }
+
+        .panel{
+
+            background:var(--card);
+
+            border:
+            1px solid var(--border);
+
+            border-radius:14px;
+
+            padding:20px;
+
+            box-shadow:var(--shadow);
+        }
+
+        .panel-header{
+
+            display:flex;
+            align-items:center;
+            justify-content:space-between;
+
+            padding-bottom:14px;
+
+            border-bottom:
+            1px solid var(--border);
+
+            margin-bottom:18px;
+        }
+
+        .panel-title{
+
+            font-size:14px;
+            font-weight:600;
+        }
+
+        .live{
+
+            background:
+            rgba(59,130,246,0.15);
+
+            color:#60a5fa;
+
+            font-size:11px;
+
+            padding:4px 10px;
+
+            border-radius:30px;
+        }
+
+        /* =========================================
+           TABLE
+        ========================================== */
+
+        table{
+            width:100%;
+            border-collapse:collapse;
+        }
+
+        th{
+
+            text-align:left;
+
+            font-size:10px;
+
+            text-transform:uppercase;
+
+            letter-spacing:1px;
+
+            color:#556274;
+
+            padding:0 8px 12px;
+
+            border-bottom:
+            1px solid var(--border);
+        }
+
+        td{
+
+            padding:14px 8px;
+
+            border-bottom:
+            1px solid var(--border);
+
+            color:#dbe4ee;
+
+            font-size:13px;
+        }
+
+        tr:last-child td{
+            border-bottom:none;
+        }
+
+        tr:hover td{
+            background:
+            rgba(255,255,255,0.015);
+        }
+
+        /* =========================================
+           BADGES
+        ========================================== */
+
+        .badge{
+
+            display:inline-flex;
+            align-items:center;
+
+            padding:5px 10px;
+
+            border-radius:20px;
+
+            font-size:11px;
+            font-weight:600;
+        }
+
+        .OPEN{
+            background:rgba(59,130,246,0.15);
+            color:#60a5fa;
+        }
+
+        .IN_PROGRESS{
+            background:rgba(245,158,11,0.15);
+            color:#f59e0b;
+        }
+
+        .RESOLVED{
+            background:rgba(34,197,94,0.15);
+            color:#22c55e;
+        }
+
+        .CLOSED{
+            background:rgba(148,163,184,0.1);
+            color:#94a3b8;
+        }
+
+        .HIGH{
+            background:rgba(245,158,11,0.15);
+            color:#f59e0b;
+        }
+
+        .MEDIUM{
+            background:rgba(59,130,246,0.15);
+            color:#60a5fa;
+        }
+
+        .LOW{
+            background:rgba(34,197,94,0.15);
+            color:#4ade80;
+        }
+
+        .CRITICAL{
+            background:rgba(239,68,68,0.15);
+            color:#ef4444;
+        }
+
+        /* =========================================
+           ANALYTICS
+        ========================================== */
+
+        .metric{
+            margin-bottom:16px;
+        }
+
+        .metric-top{
+
+            display:flex;
+            justify-content:space-between;
+
+            margin-bottom:6px;
+
+            font-size:13px;
+
+            color:#cbd5e1;
+        }
+
+        .metric-count{
+            font-weight:600;
+        }
+
+        .bar{
+
+            height:6px;
+
+            background:#111827;
+
+            border-radius:10px;
+
+            overflow:hidden;
+        }
+
+        .fill{
+
+            height:100%;
+
+            border-radius:10px;
+
+            transition:0.4s;
+        }
+
+        .blue{background:var(--blue)}
+        .yellow{background:var(--yellow)}
+        .green{background:var(--green)}
+        .grey{background:#64748b}
+        .red{background:var(--red)}
+
+        .divider{
+
+            margin:
+            22px 0 14px;
+
+            padding-top:18px;
+
+            border-top:
+            1px solid var(--border);
+
+            font-size:13px;
+            font-weight:600;
+        }
+
+        /* =========================================
+           RESPONSIVE
+        ========================================== */
+
+        @media(max-width:1100px){
+
+            .cards{
+                grid-template-columns:
+                repeat(2,1fr);
+            }
+
+            .grid{
+                grid-template-columns:1fr;
+            }
+
+            .sidebar{
+                display:none;
+            }
+
+            .main{
+                margin-left:0;
+            }
         }
 
     </style>
@@ -185,119 +651,464 @@
 
 <body>
 
-<div class="container">
+<div class="layout">
 
     <!-- SIDEBAR -->
-    <div class="sidebar">
-        <h2>IncidentIQ</h2>
-        <a href="#">Dashboard</a>
-        <a href="/pages/incidents.html">Incidents</a>
-        <a href="/pages/create-incident.html">Create Incident</a>
-    </div>
+    <aside class="sidebar">
+
+        <div class="logo">
+            <div class="logo-title">
+                IncidentIQ
+            </div>
+
+            <div class="logo-sub">
+                Management System
+            </div>
+        </div>
+
+        <nav class="nav">
+
+            <a href="#"
+               class="nav-item active">
+                Dashboard
+            </a>
+
+            <div class="nav-section">
+                Incidents
+            </div>
+
+            <a href="/pages/incidents.html"
+               class="nav-item">
+                All Incidents
+
+                <span class="nav-badge">
+                    30
+                </span>
+            </a>
+
+            <a href="/pages/create-incident.html"
+               class="nav-item">
+                Create Incident
+            </a>
+
+            <a href="#"
+               class="nav-item">
+                My Incidents
+            </a>
+
+            <a href="#"
+               class="nav-item">
+                SLA Breached
+
+                <span class="nav-badge">
+                    26
+                </span>
+            </a>
+
+            <div class="nav-section">
+                Details
+            </div>
+
+            <a href="#"
+               class="nav-item">
+                Incident Detail
+            </a>
+
+            <a href="#"
+               class="nav-item">
+                Escalations
+            </a>
+
+            <a href="#"
+               class="nav-item">
+                Audit Log
+            </a>
+
+            <div class="nav-section">
+                System
+            </div>
+
+            <a href="#"
+               class="nav-item">
+                Notifications
+            </a>
+
+            <a href="#"
+               class="nav-item">
+                Users (Admin)
+            </a>
+
+        </nav>
+
+        <div class="sidebar-footer">
+
+            <div class="user">
+
+                <div class="avatar">
+                    IS
+                </div>
+
+                <div>
+
+                    <div class="user-name">
+                        Isma
+                    </div>
+
+                    <div class="user-role">
+                        ADMIN
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </aside>
 
     <!-- MAIN -->
-    <div class="main">
+    <main class="main">
 
-        <h2>Dashboard</h2>
+        <!-- TOPBAR -->
+        <div class="topbar">
 
-        <!-- CARDS -->
-        <div class="card-container">
-            <div class="card">
-                <h4>Total</h4>
-                <span id="totalCount">0</span>
-            </div>
-            <div class="card">
-                <h4>Open</h4>
-                <span id="openCount">0</span>
-            </div>
-            <div class="card">
-                <h4>In Progress</h4>
-                <span id="inProgressCount">0</span>
-            </div>
-            <div class="card">
-                <h4>Resolved</h4>
-                <span id="resolvedCount">0</span>
-            </div>
-            <div class="card">
-                <h4>Closed</h4>
-                <span id="closedCount">0</span>
-            </div>
-            <div class="card">
-                <h4>SLA Breached</h4>
-                <span id="slaCount">0</span>
+            <div class="topbar-title">
+                Dashboard
             </div>
 
-            <div class="card">
-                <h4>Resolved Today</h4>
-                <span id="resolvedToday">0</span>
-            </div>
+            <div class="topbar-right">
 
-            <div class="card">
-                <h4>Opened Today</h4>
-                <span id="openedToday">0</span>
-            </div>
-        </div>
+                <button class="btn-outline">
+                    Overview
+                </button>
 
-        <button class="btn" onclick="goToIncidents()">View Incidents</button>
-
-        <!-- GRID -->
-        <div class="dashboard-grid">
-
-            <!-- LEFT -->
-            <div class="table-box">
-                <h3>Recent Incidents</h3>
-
-                <table>
-                    <thead>
-                    <tr>
-                        <th>Title</th>
-                        <th>Priority</th>
-                        <th>Status</th>
-                        <th>Assigned</th>
-                    </tr>
-                    </thead>
-
-                    <tbody id="recentIncidents">
-                    <tr>
-                        <td colspan="4" class="empty">Loading...</td>
-                    </tr>
-                    </tbody>
-                </table>
-            </div>
-
-            <!-- RIGHT PANEL -->
-            <div class="panel">
-
-                <h3>Status Breakdown</h3>
-
-                Open <span id="openBarCount">0</span>
-                <div class="bar"><div id="openBar" class="fill open"></div></div>
-
-                In Progress <span id="progressBarCount">0</span>
-                <div class="bar"><div id="progressBar" class="fill progress"></div></div>
-
-                Resolved <span id="resolvedBarCount">0</span>
-                <div class="bar"><div id="resolvedBar" class="fill resolved"></div></div>
-
-                Closed <span id="closedBarCount">0</span>
-                <div class="bar"><div id="closedBar" class="fill closed"></div></div>
-
-                <h3>Priority Split</h3>
-
-                High <span id="highCount">0</span>
-                <div class="bar"><div id="highBar" class="fill high"></div></div>
-
-                Medium <span id="mediumCount">0</span>
-                <div class="bar"><div id="mediumBar" class="fill medium"></div></div>
-
-                Low <span id="lowCount">0</span>
-                <div class="bar"><div id="lowBar" class="fill low"></div></div>
+                <button class="btn-primary">
+                    + New Incident
+                </button>
 
             </div>
 
         </div>
 
-    </div>
+        <!-- CONTENT -->
+        <div class="content">
+
+            <!-- CARDS -->
+            <div class="cards">
+
+                <div class="card">
+
+                    <div class="card-label">
+                        Total Incidents
+                    </div>
+
+                    <div class="card-value"
+                         id="totalCount">
+                        30
+                    </div>
+
+                    <div class="card-sub">
+                        All time
+                    </div>
+
+                </div>
+
+                <div class="card">
+
+                    <div class="card-label">
+                        Open
+                    </div>
+
+                    <div class="card-value"
+                         style="color:#60a5fa"
+                         id="openCount">
+                        24
+                    </div>
+
+                    <div class="card-sub up">
+                        +3 today
+                    </div>
+
+                </div>
+
+                <div class="card">
+
+                    <div class="card-label">
+                        SLA Breached
+                    </div>
+
+                    <div class="card-value"
+                         style="color:#ef4444"
+                         id="slaCount">
+                        26
+                    </div>
+
+                    <div class="card-sub down">
+                        Needs attention
+                    </div>
+
+                </div>
+
+                <div class="card">
+
+                    <div class="card-label">
+                        Resolved Today
+                    </div>
+
+                    <div class="card-value"
+                         style="color:#22c55e"
+                         id="resolvedToday">
+                        0
+                    </div>
+
+                    <div class="card-sub up">
+                        On track
+                    </div>
+
+                </div>
+
+            </div>
+
+            <!-- GRID -->
+            <div class="grid">
+
+                <!-- TABLE -->
+                <div class="panel">
+
+                    <div class="panel-header">
+
+                        <div class="panel-title">
+                            Recent Incidents
+                        </div>
+
+                        <div class="live">
+                            Live
+                        </div>
+
+                    </div>
+
+                    <table>
+
+                        <thead>
+                        <tr>
+                            <th>Title</th>
+                            <th>Priority</th>
+                            <th>Status</th>
+                            <th>Assigned</th>
+                        </tr>
+                        </thead>
+
+                        <tbody id="recentIncidents">
+
+                        <tr>
+
+                            <td>
+                                Server Down
+                            </td>
+
+                            <td>
+                                <span class="badge HIGH">
+                                    HIGH
+                                </span>
+                            </td>
+
+                            <td>
+                                <span class="badge OPEN">
+                                    OPEN
+                                </span>
+                            </td>
+
+                            <td>
+                                engineer
+                            </td>
+
+                        </tr>
+
+                        </tbody>
+
+                    </table>
+
+                </div>
+
+                <!-- ANALYTICS -->
+                <div class="panel">
+
+                    <div class="panel-title"
+                         style="margin-bottom:18px">
+                        Status Breakdown
+                    </div>
+
+                    <div class="metric">
+
+                        <div class="metric-top">
+
+                            <span>Open</span>
+
+                            <span class="metric-count">
+                                24
+                            </span>
+
+                        </div>
+
+                        <div class="bar">
+                            <div class="fill blue"
+                                 style="width:80%">
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <div class="metric">
+
+                        <div class="metric-top">
+
+                            <span>In Progress</span>
+
+                            <span class="metric-count">
+                                2
+                            </span>
+
+                        </div>
+
+                        <div class="bar">
+                            <div class="fill yellow"
+                                 style="width:20%">
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <div class="metric">
+
+                        <div class="metric-top">
+
+                            <span>Resolved</span>
+
+                            <span class="metric-count">
+                                2
+                            </span>
+
+                        </div>
+
+                        <div class="bar">
+                            <div class="fill green"
+                                 style="width:20%">
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <div class="metric">
+
+                        <div class="metric-top">
+
+                            <span>Closed</span>
+
+                            <span class="metric-count">
+                                2
+                            </span>
+
+                        </div>
+
+                        <div class="bar">
+                            <div class="fill grey"
+                                 style="width:20%">
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <div class="divider">
+                        Priority Split
+                    </div>
+
+                    <div class="metric">
+
+                        <div class="metric-top">
+
+                            <span>Critical</span>
+
+                            <span class="metric-count">
+                                0
+                            </span>
+
+                        </div>
+
+                        <div class="bar">
+                            <div class="fill red"
+                                 style="width:0%">
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <div class="metric">
+
+                        <div class="metric-top">
+
+                            <span>High</span>
+
+                            <span class="metric-count">
+                                22
+                            </span>
+
+                        </div>
+
+                        <div class="bar">
+                            <div class="fill yellow"
+                                 style="width:75%">
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <div class="metric">
+
+                        <div class="metric-top">
+
+                            <span>Medium</span>
+
+                            <span class="metric-count">
+                                3
+                            </span>
+
+                        </div>
+
+                        <div class="bar">
+                            <div class="fill blue"
+                                 style="width:25%">
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <div class="metric">
+
+                        <div class="metric-top">
+
+                            <span>Low</span>
+
+                            <span class="metric-count">
+                                5
+                            </span>
+
+                        </div>
+
+                        <div class="bar">
+                            <div class="fill green"
+                                 style="width:35%">
+                            </div>
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </main>
 
 </div>
 

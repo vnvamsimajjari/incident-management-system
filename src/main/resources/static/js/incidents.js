@@ -1,147 +1,286 @@
-// ================================
+// ======================================
 // 🚀 APP START
-// ================================
+// ======================================
+console.clear();
 console.log("🚀 Incidents JS Loaded");
 
-// ================================
+// ======================================
 // 🔐 AUTH CHECK
-// ================================
+// ======================================
 const token = localStorage.getItem("token");
 
 if (!token || token === "undefined" || token === "null") {
     window.location.href = "/pages/login.html";
 }
 
-// ================================
+// ======================================
 // 🔁 REDIRECT FLAG
-// ================================
+// ======================================
 let isRedirecting = false;
 
-
-// ================================
+// ======================================
 // 📡 LOAD INCIDENTS
-// ================================
+// ======================================
 async function loadIncidents() {
+
     try {
+
         console.log("📡 Fetching incidents...");
 
-        const response = await fetch("/api/incidents?page=0&size=100", {
-            method: "GET",
-            headers: {
-                "Authorization": "Bearer " + token
+        showLoading();
+
+        const response = await fetch(
+            "/api/incidents?page=0&size=100",
+            {
+                method: "GET",
+                headers: {
+                    "Authorization": "Bearer " + token
+                }
             }
-        });
+        );
 
         // 🔴 Unauthorized
-        if (response.status === 401 || response.status === 403) {
+        if (
+            response.status === 401 ||
+            response.status === 403
+        ) {
             logout();
             return;
         }
 
         if (!response.ok) {
-            throw new Error("API Error: " + response.status);
+            throw new Error(
+                "API Error: " + response.status
+            );
         }
 
         const data = await response.json();
 
         console.log("✅ API Response:", data);
 
-        renderTable(data);
+        const incidents = Array.isArray(data)
+            ? data
+            : (
+                Array.isArray(data?.content)
+                    ? data.content
+                    : []
+            );
+
+        renderTable(incidents);
 
     } catch (error) {
-        console.error("❌ Error loading incidents:", error);
-        logout();
+
+        console.error(
+            "❌ Error loading incidents:",
+            error
+        );
+
+        showError();
+
     }
 }
 
-
-// ================================
+// ======================================
 // 🖥️ RENDER TABLE
-// ================================
-function renderTable(data) {
+// ======================================
+function renderTable(incidents) {
 
-    const table = document.getElementById("incidentsTable");
+    const table =
+        document.getElementById("incidentsTable");
+
+    if (!table) return;
+
     table.innerHTML = "";
 
-    const incidents = Array.isArray(data)
-        ? data
-        : (data?.content || []);
+    // ======================================
+    // SORT LATEST FIRST
+    // ======================================
+    const sorted = [...incidents]
+        .sort((a, b) => b.id - a.id);
 
-    if (incidents.length === 0) {
+    // ======================================
+    // EMPTY STATE
+    // ======================================
+    if (sorted.length === 0) {
+
         table.innerHTML = `
             <tr>
-                <td colspan="6" style="text-align:center;">
+                <td colspan="6" class="empty">
                     No incidents found
                 </td>
             </tr>
         `;
+
         return;
     }
 
-    incidents.forEach(i => {
+    // ======================================
+    // TABLE ROWS
+    // ======================================
+    sorted.forEach(i => {
+
         table.innerHTML += `
             <tr>
+
                 <td>${i.id}</td>
+
                 <td>${i.title || "-"}</td>
-                <td>${i.priority || "-"}</td>
-                <td>${i.status || "-"}</td>
+
+                <td>
+                    <span class="priority ${i.priority}">
+                        ${i.priority || "-"}
+                    </span>
+                </td>
+
+                <td>
+                    <span class="status ${i.status}">
+                        ${i.status || "-"}
+                    </span>
+                </td>
+
                 <td>${i.assignedTo || "N/A"}</td>
-                <td>${renderActions(i)}</td>
+
+                <td>
+                    ${renderActions(i)}
+                </td>
+
             </tr>
         `;
     });
 }
 
-
-// ================================
+// ======================================
 // ⚙️ ACTION BUTTONS
-// ================================
+// ======================================
 function renderActions(i) {
 
-    const status = i.status ? i.status.toUpperCase() : "";
+    const status =
+        i.status
+            ? i.status.toUpperCase()
+            : "";
 
+    // ======================================
+    // OPEN → START
+    // ======================================
     if (status === "OPEN") {
-        return `<button onclick="updateStatus(${i.id}, 'IN_PROGRESS', this)">Start</button>`;
+
+        return `
+            <button
+                class="action-btn start-btn"
+                onclick="updateStatus(
+                    ${i.id},
+                    'IN_PROGRESS',
+                    this
+                )">
+
+                Start
+
+            </button>
+        `;
     }
 
+    // ======================================
+    // IN_PROGRESS → RESOLVE
+    // ======================================
     if (status === "IN_PROGRESS") {
-        return `<button onclick="updateStatus(${i.id}, 'RESOLVED', this)">Resolve</button>`;
+
+        return `
+            <button
+                class="action-btn resolve-btn"
+                onclick="updateStatus(
+                    ${i.id},
+                    'RESOLVED',
+                    this
+                )">
+
+                Resolve
+
+            </button>
+        `;
     }
 
+    // ======================================
+    // RESOLVED → CLOSE
+    // ======================================
     if (status === "RESOLVED") {
-        return `<button onclick="updateStatus(${i.id}, 'CLOSED', this)">Close</button>`;
+
+        return `
+            <button
+                class="action-btn close-btn"
+                onclick="updateStatus(
+                    ${i.id},
+                    'CLOSED',
+                    this
+                )">
+
+                Close
+
+            </button>
+        `;
     }
 
-    return `<span>Done</span>`;
+    // ======================================
+    // CLOSED
+    // ======================================
+    return `
+        <span style="color:#94a3b8;">
+            Completed
+        </span>
+    `;
 }
 
-
-// ================================
+// ======================================
 // 🔄 UPDATE STATUS
-// ================================
-async function updateStatus(id, status, btn) {
-    try {
-        console.log(`🔄 Updating ${id} → ${status}`);
+// ======================================
+async function updateStatus(
+    id,
+    status,
+    btn
+) {
 
-        // 🔒 disable button safely
+    try {
+
+        console.log(
+            `🔄 Updating ${id} → ${status}`
+        );
+
+        // ======================================
+        // DISABLE BUTTON
+        // ======================================
         if (btn) {
+
             btn.disabled = true;
+
             btn.innerText = "Updating...";
         }
 
-        const response = await fetch(`/api/incidents/${id}/status`, {
-            method: "PUT",
-            headers: {
-                "Authorization": "Bearer " + token,
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify({
-                status: status
-            })
-        });
+        // ======================================
+        // API CALL
+        // ======================================
+        const response = await fetch(
+            `/api/incidents/${id}/status`,
+            {
+                method: "PUT",
+                headers: {
+                    "Authorization":
+                        "Bearer " + token,
 
-        // 🔴 Unauthorized
-        if (response.status === 401 || response.status === 403) {
+                    "Content-Type":
+                        "application/json"
+                },
+                body: JSON.stringify({
+                    status: status
+                })
+            }
+        );
+
+        // ======================================
+        // AUTH FAILURE
+        // ======================================
+        if (
+            response.status === 401 ||
+            response.status === 403
+        ) {
             logout();
             return;
         }
@@ -152,36 +291,91 @@ async function updateStatus(id, status, btn) {
 
         console.log("✅ Status updated");
 
-        // 🔄 reload table
+        // ======================================
+        // RELOAD TABLE
+        // ======================================
         await loadIncidents();
 
     } catch (error) {
-        console.error("❌ Update error:", error);
+
+        console.error(
+            "❌ Update error:",
+            error
+        );
+
         alert("Update failed ❌");
 
-        // 🔓 re-enable button if failed
+        // ======================================
+        // RESTORE BUTTON
+        // ======================================
         if (btn) {
+
             btn.disabled = false;
+
             btn.innerText = "Retry";
         }
     }
 }
 
+// ======================================
+// ⏳ LOADING STATE
+// ======================================
+function showLoading() {
 
-// ================================
+    const table =
+        document.getElementById("incidentsTable");
+
+    if (!table) return;
+
+    table.innerHTML = `
+        <tr>
+            <td colspan="6" class="empty">
+                Loading incidents...
+            </td>
+        </tr>
+    `;
+}
+
+// ======================================
+// ❌ ERROR STATE
+// ======================================
+function showError() {
+
+    const table =
+        document.getElementById("incidentsTable");
+
+    if (!table) return;
+
+    table.innerHTML = `
+        <tr>
+            <td colspan="6" class="empty">
+                Failed to load incidents
+            </td>
+        </tr>
+    `;
+}
+
+// ======================================
 // 🚪 LOGOUT
-// ================================
+// ======================================
 function logout() {
+
     if (isRedirecting) return;
 
     isRedirecting = true;
 
     localStorage.removeItem("token");
-    window.location.href = "/pages/login.html";
+
+    window.location.href =
+        "/pages/login.html";
 }
 
+// ======================================
+// 🔄 AUTO REFRESH
+// ======================================
+setInterval(loadIncidents, 30000);
 
-// ================================
+// ======================================
 // 🚀 INIT
-// ================================
+// ======================================
 loadIncidents();

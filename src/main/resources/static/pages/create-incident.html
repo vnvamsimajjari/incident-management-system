@@ -1,97 +1,321 @@
 <!DOCTYPE html>
-<html>
-<head>
-    <title>Create Incident</title>
+<html lang="en">
 
-    <!-- ✅ Correct CSS path -->
-    <link rel="stylesheet" href="../css/main.css">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create Incident - IMS</title>
+
+    <link rel="icon" href="data:,">
 
     <style>
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
         body {
-            font-family: Arial;
-            background: #f4f6f8;
-            padding: 20px;
+            font-family: Inter, Arial, sans-serif;
+            background: #0f172a;
+            color: #e2e8f0;
         }
 
-        h2 {
-            text-align: center;
+        /* ================================
+           LAYOUT
+        ================================= */
+
+        .layout {
+            display: flex;
+            min-height: 100vh;
         }
 
-        .form-box {
-            width: 400px;
-            margin: auto;
-            background: white;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        /* ================================
+           SIDEBAR
+        ================================= */
+
+        .sidebar {
+            width: 240px;
+            background: #111827;
+            border-right: 1px solid #334155;
+            padding: 25px 18px;
         }
 
-        input, select, textarea {
-            width: 100%;
-            padding: 8px;
-            margin: 8px 0;
-        }
-
-        button {
-            width: 100%;
-            padding: 10px;
-            background: #185FA5;
+        .logo {
+            font-size: 22px;
+            font-weight: bold;
+            margin-bottom: 35px;
             color: white;
-            border: none;
-            cursor: pointer;
         }
 
-        button:hover {
-            background: #0C447C;
-        }
-
-        .back-link {
+        .sidebar a {
             display: block;
-            text-align: center;
-            margin-top: 10px;
+            text-decoration: none;
+            color: #94a3b8;
+            padding: 12px 14px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            transition: 0.2s;
         }
+
+        .sidebar a:hover {
+            background: #1e293b;
+            color: white;
+        }
+
+        .sidebar .active {
+            background: #1e293b;
+            color: white;
+        }
+
+        /* ================================
+           MAIN
+        ================================= */
+
+        .main {
+            flex: 1;
+            padding: 30px;
+        }
+
+        .page-title {
+            font-size: 28px;
+            margin-bottom: 25px;
+        }
+
+        /* ================================
+           FORM CARD
+        ================================= */
+
+        .form-card {
+            max-width: 700px;
+            background: #1e293b;
+            border: 1px solid #334155;
+            border-radius: 14px;
+            padding: 28px;
+        }
+
+        /* ================================
+           FORM GROUP
+        ================================= */
+
+        .form-group {
+            margin-bottom: 22px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #cbd5e1;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        /* ================================
+           INPUTS
+        ================================= */
+
+        input,
+        textarea,
+        select {
+            width: 100%;
+            padding: 12px 14px;
+            border-radius: 8px;
+            border: 1px solid #334155;
+            background: #0f172a;
+            color: #e2e8f0;
+            font-size: 14px;
+            outline: none;
+            transition: 0.2s;
+        }
+
+        input:focus,
+        textarea:focus,
+        select:focus {
+            border-color: #3b82f6;
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 120px;
+        }
+
+        /* ================================
+           BUTTONS
+        ================================= */
+
+        .btn-group {
+            display: flex;
+            gap: 14px;
+            margin-top: 25px;
+        }
+
+        .btn {
+            border: none;
+            padding: 12px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: 0.2s;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .primary-btn {
+            background: #3b82f6;
+            color: white;
+        }
+
+        .primary-btn:hover {
+            background: #2563eb;
+        }
+
+        .secondary-btn {
+            background: #334155;
+            color: white;
+        }
+
+        .secondary-btn:hover {
+            background: #475569;
+        }
+
+        /* ================================
+           RESPONSIVE
+        ================================= */
+
+        @media(max-width: 1000px) {
+
+            .sidebar {
+                display: none;
+            }
+
+            .main {
+                padding: 20px;
+            }
+
+            .form-card {
+                max-width: 100%;
+            }
+
+            .btn-group {
+                flex-direction: column;
+            }
+        }
+
     </style>
 </head>
 
 <body>
 
-<h2>Create Incident</h2>
+<div class="layout">
 
-<div class="form-box">
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
 
-    <form id="incidentForm">
+        <div class="logo">IncidentIQ</div>
 
-        <label>Title:</label>
-        <input type="text" id="title" required>
+        <a href="/pages/dashboard.html">Dashboard</a>
+        <a href="/pages/incidents.html">Incidents</a>
+        <a href="#" class="active">Create Incident</a>
 
-        <label>Description:</label>
-        <textarea id="description"></textarea>
+    </aside>
 
-        <label>Priority:</label>
-        <select id="priority">
-            <option value="LOW">LOW</option>
-            <option value="MEDIUM">MEDIUM</option>
-            <option value="HIGH">HIGH</option>
-        </select>
+    <!-- MAIN -->
+    <main class="main">
 
-        <label>Assign To:</label>
-        <select id="assignedTo">
-            <option value="admin">admin</option>
-            <option value="engineer">engineer</option>
-        </select>
+        <h1 class="page-title">Create Incident</h1>
 
-        <label>SLA Minutes:</label>
-        <input type="number" id="slaMinutes" value="60">
+        <!-- FORM -->
+        <div class="form-card">
 
-        <button type="submit">Create</button>
+            <form id="incidentForm">
 
-    </form>
+                <!-- TITLE -->
+                <div class="form-group">
 
-    <a class="back-link" href="incidents.html">Back to Incidents</a>
+                    <label for="title">Title</label>
+
+                    <input type="text"
+                           id="title"
+                           placeholder="Enter incident title"
+                           required>
+
+                </div>
+
+                <!-- DESCRIPTION -->
+                <div class="form-group">
+
+                    <label for="description">Description</label>
+
+                    <textarea id="description"
+                              placeholder="Describe the issue"></textarea>
+
+                </div>
+
+                <!-- PRIORITY -->
+                <div class="form-group">
+
+                    <label for="priority">Priority</label>
+
+                    <select id="priority">
+
+                        <option value="LOW">LOW</option>
+                        <option value="MEDIUM">MEDIUM</option>
+                        <option value="HIGH">HIGH</option>
+
+                    </select>
+
+                </div>
+
+                <!-- ASSIGNED -->
+                <div class="form-group">
+
+                    <label for="assignedTo">Assign To</label>
+
+                    <select id="assignedTo">
+
+                        <option value="admin">admin</option>
+                        <option value="engineer">engineer</option>
+
+                    </select>
+
+                </div>
+
+                <!-- SLA -->
+                <div class="form-group">
+
+                    <label for="slaMinutes">SLA Minutes</label>
+
+                    <input type="number"
+                           id="slaMinutes"
+                           value="60">
+
+                </div>
+
+                <!-- BUTTONS -->
+                <div class="btn-group">
+
+                    <button type="submit"
+                            class="btn primary-btn">
+                        Create Incident
+                    </button>
+
+                    <a href="/pages/incidents.html"
+                       class="btn secondary-btn">
+                        Back to Incidents
+                    </a>
+
+                </div>
+
+            </form>
+
+        </div>
+
+    </main>
 
 </div>
 
-<!-- ✅ Correct JS path -->
+<!-- JS -->
 <script src="../js/create-incident.js"></script>
 
 </body>

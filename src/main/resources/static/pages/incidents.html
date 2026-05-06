@@ -1,88 +1,365 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
-    <title>All Incidents</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Incidents - IMS</title>
 
-    <!-- ✅ Correct CSS path -->
-    <link rel="stylesheet" href="../css/main.css">
+    <link rel="icon" href="data:,">
 
     <style>
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
         body {
-            font-family: Arial;
-            padding: 20px;
-            background: #f4f6f8;
+            font-family: Inter, Arial, sans-serif;
+            background: #0f172a;
+            color: #e2e8f0;
         }
 
-        h2 {
-            text-align: center;
+        /* ================================
+           LAYOUT
+        ================================= */
+
+        .layout {
+            display: flex;
+            min-height: 100vh;
         }
 
-        table {
-            background: white;
-            border-collapse: collapse;
-            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        /* ================================
+           SIDEBAR
+        ================================= */
+
+        .sidebar {
+            width: 240px;
+            background: #111827;
+            border-right: 1px solid #334155;
+            padding: 25px 18px;
         }
 
-        th {
-            background: #185FA5;
+        .logo {
+            font-size: 22px;
+            font-weight: bold;
+            margin-bottom: 35px;
             color: white;
         }
 
-        th, td {
-            padding: 10px;
-            text-align: center;
+        .sidebar a {
+            display: block;
+            text-decoration: none;
+            color: #94a3b8;
+            padding: 12px 14px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            transition: 0.2s;
         }
 
-        button {
-            padding: 6px 10px;
-            cursor: pointer;
+        .sidebar a:hover {
+            background: #1e293b;
+            color: white;
         }
 
-        .top-bar {
+        .sidebar .active {
+            background: #1e293b;
+            color: white;
+        }
+
+        /* ================================
+           MAIN
+        ================================= */
+
+        .main {
+            flex: 1;
+            padding: 28px;
+        }
+
+        .page-header {
             display: flex;
             justify-content: space-between;
-            margin-bottom: 15px;
+            align-items: center;
+            margin-bottom: 25px;
         }
+
+        .page-title {
+            font-size: 28px;
+        }
+
+        /* ================================
+           BUTTONS
+        ================================= */
+
+        .btn-group {
+            display: flex;
+            gap: 12px;
+        }
+
+        .btn {
+            border: none;
+            padding: 11px 18px;
+            border-radius: 8px;
+            cursor: pointer;
+            color: white;
+            font-weight: 500;
+            transition: 0.2s;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .primary-btn {
+            background: #3b82f6;
+        }
+
+        .primary-btn:hover {
+            background: #2563eb;
+        }
+
+        .danger-btn {
+            background: #ef4444;
+        }
+
+        .danger-btn:hover {
+            background: #dc2626;
+        }
+
+        /* ================================
+           TABLE BOX
+        ================================= */
+
+        .table-container {
+            background: #1e293b;
+            border: 1px solid #334155;
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th {
+            background: #111827;
+            color: #94a3b8;
+            text-transform: uppercase;
+            font-size: 12px;
+            padding: 16px;
+            text-align: left;
+            border-bottom: 1px solid #334155;
+        }
+
+        td {
+            padding: 16px;
+            border-bottom: 1px solid #334155;
+        }
+
+        tr:hover {
+            background: #293548;
+        }
+
+        .empty {
+            text-align: center;
+            color: #64748b;
+            padding: 25px;
+        }
+
+        /* ================================
+           STATUS BADGES
+        ================================= */
+
+        .status,
+        .priority {
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+            display: inline-block;
+        }
+
+        .OPEN {
+            background: rgba(239, 68, 68, 0.15);
+            color: #ef4444;
+        }
+
+        .IN_PROGRESS {
+            background: rgba(245, 158, 11, 0.15);
+            color: #f59e0b;
+        }
+
+        .RESOLVED {
+            background: rgba(34, 197, 94, 0.15);
+            color: #22c55e;
+        }
+
+        .CLOSED {
+            background: rgba(148, 163, 184, 0.15);
+            color: #94a3b8;
+        }
+
+        /* ================================
+           PRIORITY BADGES
+        ================================= */
+
+        .HIGH {
+            background: rgba(239, 68, 68, 0.15);
+            color: #ef4444;
+        }
+
+        .MEDIUM {
+            background: rgba(59, 130, 246, 0.15);
+            color: #3b82f6;
+        }
+
+        .LOW {
+            background: rgba(34, 197, 94, 0.15);
+            color: #22c55e;
+        }
+
+        /* ================================
+           ACTION BUTTONS
+        ================================= */
+
+        .action-btn {
+            border: none;
+            padding: 8px 14px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: bold;
+            color: white;
+        }
+
+        .start-btn {
+            background: #f59e0b;
+        }
+
+        .resolve-btn {
+            background: #22c55e;
+        }
+
+        .close-btn {
+            background: #64748b;
+        }
+
+        .action-btn:hover {
+            opacity: 0.9;
+        }
+
+        /* ================================
+           RESPONSIVE
+        ================================= */
+
+        @media(max-width: 1000px) {
+
+            .sidebar {
+                display: none;
+            }
+
+            .main {
+                padding: 20px;
+            }
+
+            .page-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 15px;
+            }
+
+            table {
+                font-size: 14px;
+            }
+        }
+
     </style>
 </head>
 
 <body>
 
-<h2>All Incidents</h2>
+<div class="layout">
 
-<div class="top-bar">
-    <button onclick="logout()">Logout</button>
-    <a href="create-incident.html">Create Incident</a>
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+
+        <div class="logo">IncidentIQ</div>
+
+        <a href="/pages/dashboard.html">Dashboard</a>
+        <a href="#" class="active">Incidents</a>
+        <a href="/pages/create-incident.html">Create Incident</a>
+
+    </aside>
+
+    <!-- MAIN -->
+    <main class="main">
+
+        <!-- HEADER -->
+        <div class="page-header">
+
+            <h1 class="page-title">All Incidents</h1>
+
+            <div class="btn-group">
+
+                <a href="/pages/create-incident.html"
+                   class="btn primary-btn">
+                    + Create Incident
+                </a>
+
+                <button class="btn danger-btn"
+                        onclick="logout()">
+                    Logout
+                </button>
+
+            </div>
+
+        </div>
+
+        <!-- TABLE -->
+        <div class="table-container">
+
+            <table>
+
+                <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Title</th>
+                    <th>Priority</th>
+                    <th>Status</th>
+                    <th>Assigned To</th>
+                    <th>Actions</th>
+                </tr>
+                </thead>
+
+                <tbody id="incidentsTable">
+
+                <tr>
+                    <td colspan="6" class="empty">
+                        Loading incidents...
+                    </td>
+                </tr>
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+    </main>
+
 </div>
 
-<table border="1" width="100%">
-    <thead>
-    <tr>
-        <th>ID</th>
-        <th>Title</th>
-        <th>Priority</th>
-        <th>Status</th>
-        <th>Assigned To</th>
-        <th>Actions</th>
-    </tr>
-    </thead>
-
-    <tbody id="incidentsTable">
-    <tr>
-        <td colspan="6">Loading...</td>
-    </tr>
-    </tbody>
-</table>
-
-<!-- ✅ Correct JS path -->
+<!-- JS -->
 <script src="../js/incidents.js"></script>
 
 <script>
+
     function logout() {
         localStorage.removeItem("token");
         window.location.href = "/pages/login.html";
     }
+
 </script>
 
 </body>
